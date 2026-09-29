@@ -8,9 +8,13 @@ import '../core/clock.dart';
 import '../data/db/database.dart';
 import '../features/accounts/data/account_repository.dart';
 import '../features/accounts/domain/account.dart';
+import '../data/rates/nbkr_client.dart';
+import '../features/budgets/data/budget_repository.dart';
+import '../features/budgets/domain/budget.dart';
 import '../features/categories/data/category_repository.dart';
 import '../features/categories/domain/category.dart';
 import '../features/currencies/data/rates_repository.dart';
+import '../features/currencies/data/rates_updater.dart';
 import '../features/currencies/domain/converter.dart';
 import '../features/currencies/domain/rate.dart';
 import '../features/notifications/domain/reminder_plan.dart';
@@ -217,6 +221,33 @@ final upcomingProvider = StreamProvider<List<DueItem>>((ref) {
 
 final lastPaidProvider = StreamProvider<Map<String, int>>(
   (ref) => ref.watch(ruleRepositoryProvider).watchLastPaid(),
+);
+
+// ------------------------------------------------------ бюджеты и курсы
+
+final budgetRepositoryProvider = Provider(
+  (ref) => BudgetRepository(ref.watch(appDatabaseProvider), ref.watch(clockProvider)),
+);
+
+final budgetsProvider = StreamProvider<List<Budget>>(
+  (ref) => ref.watch(budgetRepositoryProvider).watchAll(),
+);
+
+/// Курсы НБКР; в тестах подменяется — сети в тестах нет (I12).
+final kgsRatesSourceProvider = Provider<KgsRatesSource>((ref) => NbkrClient());
+
+final ratesUpdaterProvider = Provider(
+  (ref) => RatesUpdater(
+    ref.watch(kgsRatesSourceProvider),
+    ref.watch(ratesRepositoryProvider),
+    ref.watch(settingsRepositoryProvider),
+    ref.watch(clockProvider),
+  ),
+);
+
+/// Валюты счетов и правил, кроме базовой: им нужен курс (§8.3 «Currencies»).
+final foreignCurrenciesProvider = StreamProvider<Set<String>>(
+  (ref) => ref.watch(ratesRepositoryProvider).watchForeignCurrencies(),
 );
 
 /// Шлюз без уведомлений: разрешения нет, ничего не планирует.

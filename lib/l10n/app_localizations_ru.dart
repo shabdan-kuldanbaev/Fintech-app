@@ -1288,4 +1288,25 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get notifAlreadyPaid => 'Уже оплачено';
+
+  @override
+  String get statsLoanPayments => 'Платежи по кредитам';
+
+  @override
+  String get statsPrevMonth => 'Предыдущий месяц';
+
+  @override
+  String get statsNextMonth => 'Следующий месяц';
+
+  @override
+  String get budgetAmount => 'Бюджет на месяц';
+
+  @override
+  String get settingsRemindersHint =>
+      'Напоминания о платежах и утренняя сводка';
+
+  @override
+  String ratesLine(String code, String rate) {
+    return '1 $code = $rate';
+  }
 }

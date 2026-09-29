@@ -1,6 +1,7 @@
 import 'package:fintech/core/calendar.dart';
 import 'package:fintech/features/accounts/domain/account.dart';
 import 'package:fintech/features/accounts/domain/loan_math.dart';
+import 'package:fintech/features/budgets/data/budget_repository.dart';
 import 'package:fintech/features/currencies/domain/rate.dart';
 import 'package:fintech/features/payments/data/obligation_repository.dart';
 import 'package:fintech/features/payments/domain/rule.dart';
@@ -73,6 +74,20 @@ class Demo {
     await h.transactions.create(TxnInput(
       kind: TxKind.transfer, accountId: card, counterAccountId: vacation, amount: 500000, date: day(10),
     ));
+
+    // Прошлые месяцы — для статистики за 6 месяцев.
+    await h.income(card, 4500000, date: day(55));
+    await h.income(card, 4300000, date: day(85));
+    await h.expense(card, 250000, category: 'groceries', date: day(40), note: 'Globus');
+    await h.expense(card, 180000, category: 'groceries', date: day(70), note: 'Frunze');
+    await h.expense(cash, 60000, category: 'cafe', date: day(50), note: 'Navat');
+    await h.expense(card, 320000, category: 'clothes', date: day(95), note: 'Dordoi');
+
+    // Бюджеты: общий и два по категориям, «Кафе» — с перерасходом.
+    final budgets = BudgetRepository(h.db, h.clock);
+    await budgets.set(null, 6000000, '2026-09');
+    await budgets.set(await h.categoryId('cafe'), 100000, '2026-09');
+    await budgets.set(await h.categoryId('groceries'), 500000, '2026-09');
 
     loan = await h.obligations.createLoan(LoanInput(
       name: 'Simbank loan', currency: 'KGS', principal: 500000, totalPayable: 516862,

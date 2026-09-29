@@ -832,5 +832,21 @@
       }
     }
   },
-  "notifAlreadyPaid": "Already paid"
+  "notifAlreadyPaid": "Already paid",
+  "statsLoanPayments": "Loan payments",
+  "statsPrevMonth": "Previous month",
+  "statsNextMonth": "Next month",
+  "budgetAmount": "Budget for the month",
+  "settingsRemindersHint": "Reminders before payments and the morning digest",
+  "ratesLine": "1 {code} = {rate}",
+  "@ratesLine": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      }
+    }
+  }
 }

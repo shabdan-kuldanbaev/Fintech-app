@@ -252,3 +252,13 @@ int fromBaseMinor(int baseAmount, String currency, String base, int rateMicro) {
     rateMicro * _pow10(minorUnits(base)),
   );
 }
+
+/// Курс строкой («87,45», «0.011435») → ×10⁶, без `double` (I4). Больше
+/// шести знаков после запятой отбрасываются; ноль и мусор — `null`.
+int? parseRateMicro(String text) {
+  final t = text.trim().replaceAll(',', '.').replaceAll(RegExp(r'\s'), '');
+  final m = RegExp(r'^(\d+)(?:\.(\d{1,6})\d*)?$').firstMatch(t);
+  if (m == null) return null;
+  final v = int.parse(m.group(1)!) * rateScale + int.parse((m.group(2) ?? '').padRight(6, '0'));
+  return v > 0 ? v : null;
+}

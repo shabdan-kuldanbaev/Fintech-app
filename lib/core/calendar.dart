@@ -135,6 +135,9 @@ class MonthPeriod {
 
   bool contains(LocalDate date) => date >= start && date < end;
 
+  /// Ключ месяца бюджета `YYYY-MM` — по дате начала периода (§9.4).
+  String get monthKey => start.iso.substring(0, 7);
+
   @override
   bool operator ==(Object other) =>
       other is MonthPeriod && other.start == start && other.end == end;

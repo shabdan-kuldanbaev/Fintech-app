@@ -191,6 +191,13 @@ void main() {
     expect(code, contains('FlutterLocalNotificationsPlugin.setPluginRegistrantCallback'));
   });
 
+  test('About shows the pubspec version', () {
+    final pubspec = RegExp(r'^version:\s*([0-9.]+)', multiLine: true)
+        .firstMatch(File('pubspec.yaml').readAsStringSync())!
+        .group(1);
+    expect(File('lib/app/version.dart').readAsStringSync(), contains("appVersion = '$pubspec'"));
+  });
+
   test('I17: Clipboard.getData is never called', () {
     expect(offenders(anywhere, (c) => c.contains('Clipboard.getData')), isEmpty);
   });

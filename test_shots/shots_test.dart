@@ -35,6 +35,10 @@ final List<Shot> shots = [
   (name: 'account-credit', location: (d) => Routes.account(d.creditLine), keyboard: 0, emptyDb: false),
   (name: 'loan-new', location: (d) => Routes.newLoan, keyboard: 0, emptyDb: false),
   (name: 'credit-line-new', location: (d) => Routes.newCreditLine, keyboard: 0, emptyDb: false),
+  (name: 'stats', location: (d) => Routes.stats, keyboard: 0, emptyDb: false),
+  (name: 'budgets', location: (d) => Routes.budgets, keyboard: 0, emptyDb: false),
+  (name: 'rates', location: (d) => Routes.rates, keyboard: 0, emptyDb: false),
+  (name: 'settings', location: (d) => Routes.settings, keyboard: 0, emptyDb: false),
 ];
 
 void main() {

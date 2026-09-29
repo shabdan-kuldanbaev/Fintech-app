@@ -2,12 +2,20 @@ import 'package:fintech/app/app.dart';
 import 'package:fintech/app/providers.dart';
 import 'package:fintech/app/router.dart';
 import 'package:fintech/core/clock.dart';
+import 'package:fintech/data/rates/nbkr_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 import 'harness.dart';
+
+/// Курсы без сети: в тестах НБКР «недоступен», если тест не дал свои.
+class OfflineRates implements KgsRatesSource {
+  const OfflineRates();
+  @override
+  Future<Map<String, int>> fetch() async => throw StateError('offline');
+}
 
 /// iPhone 15: 393 × 852, статус-бар 59, полоска «домой» 34.
 const Size iphone = Size(393, 852);
@@ -31,6 +39,7 @@ Future<AppUnderTest> pumpApp(
   Size size = iphone,
   double keyboard = 0,
   double dpr = 2,
+  KgsRatesSource? rates,
 }) async {
   tester.view.devicePixelRatio = dpr;
   tester.view.physicalSize = size * dpr;
@@ -47,6 +56,7 @@ Future<AppUnderTest> pumpApp(
     overrides: [
       appDatabaseProvider.overrideWithValue(h.db),
       clockProvider.overrideWithValue(h.clock as Clock),
+      kgsRatesSourceProvider.overrideWithValue(rates ?? const OfflineRates()),
     ],
   );
   final router = createRouter(initialLocation: location);

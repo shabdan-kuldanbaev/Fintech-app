@@ -131,4 +131,18 @@ void main() {
       expect(mulDivRound(5, 1, 2), 3);
     });
   });
+
+  group('parseRateMicro', () {
+    test('запятая и точка, до 6 знаков, лишние отбрасываются', () {
+      expect(parseRateMicro('87,45'), 87450000);
+      expect(parseRateMicro(' 0.011435 '), 11435);
+      expect(parseRateMicro('1.23456789'), 1234567);
+      expect(parseRateMicro('100'), 100000000);
+    });
+    test('ноль, минус и мусор — null', () {
+      for (final bad in ['', '0', '0,000', '-1', 'abc', '1,2,3', '1e3']) {
+        expect(parseRateMicro(bad), isNull, reason: bad);
+      }
+    });
+  });
 }

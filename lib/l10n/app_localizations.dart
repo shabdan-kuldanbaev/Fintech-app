@@ -2281,6 +2281,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Already paid'**
   String get notifAlreadyPaid;
+
+  /// No description provided for @statsLoanPayments.
+  ///
+  /// In en, this message translates to:
+  /// **'Loan payments'**
+  String get statsLoanPayments;
+
+  /// No description provided for @statsPrevMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous month'**
+  String get statsPrevMonth;
+
+  /// No description provided for @statsNextMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Next month'**
+  String get statsNextMonth;
+
+  /// No description provided for @budgetAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget for the month'**
+  String get budgetAmount;
+
+  /// No description provided for @settingsRemindersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders before payments and the morning digest'**
+  String get settingsRemindersHint;
+
+  /// No description provided for @ratesLine.
+  ///
+  /// In en, this message translates to:
+  /// **'1 {code} = {rate}'**
+  String ratesLine(String code, String rate);
 }
 
 class _AppLocalizationsDelegate

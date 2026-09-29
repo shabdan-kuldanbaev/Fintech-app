@@ -1274,4 +1274,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifAlreadyPaid => 'Already paid';
+
+  @override
+  String get statsLoanPayments => 'Loan payments';
+
+  @override
+  String get statsPrevMonth => 'Previous month';
+
+  @override
+  String get statsNextMonth => 'Next month';
+
+  @override
+  String get budgetAmount => 'Budget for the month';
+
+  @override
+  String get settingsRemindersHint =>
+      'Reminders before payments and the morning digest';
+
+  @override
+  String ratesLine(String code, String rate) {
+    return '1 $code = $rate';
+  }
 }

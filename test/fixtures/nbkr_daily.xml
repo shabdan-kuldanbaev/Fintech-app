@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<CurrencyRates Name="Official exchange rates" Date="29.09.2026">
+  <Currency ISOCode="USD">
+    <Nominal>1</Nominal>
+    <Value>87,4500</Value>
+  </Currency>
+  <Currency ISOCode="EUR">
+    <Nominal>1</Nominal>
+    <Value>102,3456</Value>
+  </Currency>
+  <Currency ISOCode="KZT">
+    <Nominal>1</Nominal>
+    <Value>0,1654</Value>
+  </Currency>
+  <Currency ISOCode="RUB">
+    <Nominal>1</Nominal>
+    <Value>1,0834</Value>
+  </Currency>
+  <Currency ISOCode="UZS">
+    <Nominal>100</Nominal>
+    <Value>0,6850</Value>
+  </Currency>
+  <Currency ISOCode="XXX">
+    <Nominal>1</Nominal>
+    <Value>n/a</Value>
+  </Currency>
+</CurrencyRates>

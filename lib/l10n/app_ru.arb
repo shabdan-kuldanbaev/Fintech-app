@@ -363,5 +363,11 @@
   "notifActionPaid": "Оплачено",
   "notifActionSnooze": "Напомнить завтра",
   "notifResumes": "«{name}» снова с {date}",
-  "notifAlreadyPaid": "Уже оплачено"
+  "notifAlreadyPaid": "Уже оплачено",
+  "statsLoanPayments": "Платежи по кредитам",
+  "statsPrevMonth": "Предыдущий месяц",
+  "statsNextMonth": "Следующий месяц",
+  "budgetAmount": "Бюджет на месяц",
+  "settingsRemindersHint": "Напоминания о платежах и утренняя сводка",
+  "ratesLine": "1 {code} = {rate}"
 }
