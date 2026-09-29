@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 
 import '../features/settings/domain/settings.dart';
 import 'app.dart';
@@ -9,13 +10,14 @@ import 'providers.dart';
 import 'startup.dart';
 import 'theme.dart';
 import 'widgets/startup_failure_screen.dart';
+import 'widgets/toast.dart';
 
 /// Корень дерева: `runApp` вызывается сразу, инициализация идёт под ним, и
 /// её отказ — состояние экрана, а не отсутствие приложения (Jattap).
 class StartupGate extends StatefulWidget {
   const StartupGate({super.key, this.startUp = runStartup, this.onReady = completeStartup});
 
-  final Future<StartupResult> Function() startUp;
+  final Future<StartupResult> Function({List<Override> overrides}) startUp;
 
   /// Отложенная работа после первого удачного кадра.
   final void Function(StartupSuccess success) onReady;
@@ -36,18 +38,51 @@ class _StartupGateState extends State<StartupGate> {
 
   Future<void> _start() async {
     _attempt++;
-    final result = await widget.startUp();
+    final result = await widget.startUp(overrides: [appRestartProvider.overrideWithValue(_restart)]);
     if (!mounted) {
       if (result is StartupSuccess) result.container.dispose();
       return;
     }
     setState(() => _result = result);
-    if (result is StartupSuccess) widget.onReady(result);
+    if (result is StartupSuccess) {
+      widget.onReady(result);
+      final toast = _pendingToast;
+      _pendingToast = null;
+      if (toast != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final overlay = result.router.routerDelegate.navigatorKey.currentState?.overlay;
+          if (overlay != null) showActionToastOn(overlay, toast);
+        });
+      }
+    }
   }
+
+  String? _pendingToast;
 
   void _retry() {
     setState(() => _result = null);
     unawaited(_start());
+  }
+
+  /// §7: снять экраны → закрыть контейнер → [work] → запустить заново.
+  Future<void> _restart({Future<void> Function()? work, String? toast, String Function(Object error)? failToast}) async {
+    final old = _result;
+    setState(() => _result = null);
+    await WidgetsBinding.instance.endOfFrame;
+    if (old is StartupSuccess) {
+      old.container.dispose();
+      old.router.dispose();
+    }
+    _pendingToast = toast;
+    if (work != null) {
+      try {
+        await work();
+      } catch (error, stack) {
+        FlutterError.reportError(FlutterErrorDetails(exception: error, stack: stack, library: 'backup'));
+        _pendingToast = failToast?.call(error);
+      }
+    }
+    if (mounted) await _start();
   }
 
   @override

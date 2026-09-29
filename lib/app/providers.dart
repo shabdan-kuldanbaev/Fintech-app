@@ -8,6 +8,7 @@ import '../core/clock.dart';
 import '../data/db/database.dart';
 import '../features/accounts/data/account_repository.dart';
 import '../features/accounts/domain/account.dart';
+import '../data/backup/backup_files.dart';
 import '../data/rates/nbkr_client.dart';
 import '../features/budgets/data/budget_repository.dart';
 import '../features/budgets/domain/budget.dart';
@@ -25,6 +26,8 @@ import '../features/payments/data/obligation_repository.dart';
 import '../features/payments/data/occurrence_planner.dart';
 import '../features/payments/data/rule_repository.dart';
 import '../features/payments/domain/rule.dart';
+import '../features/security/app_lock.dart';
+import '../features/settings/data/backup_service.dart';
 import '../features/settings/data/settings_repository.dart';
 import '../features/settings/domain/settings.dart';
 import '../features/transactions/data/transaction_repository.dart';
@@ -248,6 +251,34 @@ final ratesUpdaterProvider = Provider(
 /// Валюты счетов и правил, кроме базовой: им нужен курс (§8.3 «Currencies»).
 final foreignCurrenciesProvider = StreamProvider<Set<String>>(
   (ref) => ref.watch(ratesRepositoryProvider).watchForeignCurrencies(),
+);
+
+// ------------------------------------------------- замок и резервная копия
+
+/// Face ID / код-пароль; в тестах подменяется.
+final authenticatorProvider = Provider<Authenticator>((ref) => LocalAuthenticator());
+
+/// Файлы копий; в тестах — в памяти.
+final backupFileSystemProvider = Provider<BackupFileSystem>((ref) => const BackupFiles());
+
+final backupServiceProvider = Provider(
+  (ref) => BackupService(ref.watch(appDatabaseProvider), ref.watch(clockProvider), ref.watch(backupFileSystemProvider)),
+);
+
+final backupListProvider = FutureProvider<List<String>>((ref) => ref.watch(backupServiceProvider).files());
+
+/// Перезапуск состояния приложения (§7, восстановление копии): `StartupGate`
+/// снимает экраны и контейнер, выполняет [work] (подмена файла базы — когда
+/// ни один поток уже не читает старую), запускает приложение заново и
+/// показывает [toast]; ошибка [work] — тост [failToast].
+typedef AppRestart = Future<void> Function({
+  Future<void> Function()? work,
+  String? toast,
+  String Function(Object error)? failToast,
+});
+
+final appRestartProvider = Provider<AppRestart>(
+  (ref) => ({work, toast, failToast}) async => work?.call(),
 );
 
 /// Шлюз без уведомлений: разрешения нет, ничего не планирует.

@@ -198,6 +198,15 @@ void main() {
     expect(File('lib/app/version.dart').readAsStringSync(), contains("appVersion = '$pubspec'"));
   });
 
+  test('I18: the lock gate is never switched off in lib/', () {
+    expect(offenders(anywhere, (c) => RegExp(r'withLock:\s*false').hasMatch(c)), isEmpty);
+  });
+
+  /// Без описания iOS роняет приложение при первом обращении к Face ID.
+  test('I18: Info.plist explains Face ID', () {
+    expect(File('ios/Runner/Info.plist').readAsStringSync(), contains('<key>NSFaceIDUsageDescription</key>'));
+  });
+
   test('I17: Clipboard.getData is never called', () {
     expect(offenders(anywhere, (c) => c.contains('Clipboard.getData')), isEmpty);
   });

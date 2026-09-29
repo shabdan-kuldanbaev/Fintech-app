@@ -16,6 +16,7 @@ import '../../../app/widgets/header.dart';
 import '../../../app/widgets/toast.dart';
 import '../../accounts/presentation/style_pickers.dart';
 import '../../currencies/presentation/rates_screen.dart';
+import '../../security/app_lock.dart';
 import '../domain/settings.dart';
 
 /// «Settings» (§8.3): язык, основная валюта, курсы, начало месяца,
@@ -59,6 +60,23 @@ class _SettingsBody extends ConsumerWidget {
       await ref.read(reminderServiceProvider).replanQuietly();
     } else if (overlay != null) {
       showActionToastOn(overlay, l.settingsNotificationsOff, icon: Icons.info_outline_rounded);
+    }
+  }
+
+  /// Face ID (§8.3): включение — сразу проверка; нет ни Face ID, ни
+  /// код-пароля — подсказка, замок не включается.
+  Future<void> _toggleLock(BuildContext context, WidgetRef ref, bool on) async {
+    if (!on) return _write(ref, SettingKeys.lockEnabled, false);
+    final l = context.l10n;
+    final overlay = Navigator.of(context, rootNavigator: true).overlay;
+    final result = await ref.read(authenticatorProvider).unlock(l.lockReason);
+    switch (result) {
+      case UnlockResult.unlocked:
+        await _write(ref, SettingKeys.lockEnabled, true);
+      case UnlockResult.unavailable:
+        if (overlay != null) showActionToastOn(overlay, l.lockUnavailable, icon: Icons.info_outline_rounded);
+      case UnlockResult.failed:
+        break;
     }
   }
 
@@ -163,6 +181,18 @@ class _SettingsBody extends ConsumerWidget {
                 },
               ),
             ],
+          ],
+        ),
+        const SizedBox(height: AppSpacing.s12),
+        RowsCard(
+          children: [
+            SwitchListTile(
+              key: const ValueKey('settings-lock'),
+              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.s18),
+              title: Text(l.settingsFaceId),
+              value: s.lockEnabled,
+              onChanged: (v) => unawaited(_toggleLock(context, ref, v)),
+            ),
           ],
         ),
         const SizedBox(height: AppSpacing.s12),

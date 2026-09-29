@@ -331,7 +331,7 @@ class AppDatabase extends _$AppDatabase {
 - `Money(int minor, String currency)`; сложение/вычитание только при одинаковой валюте, иначе `ArgumentError`.
 - `minorUnits(code)`: `KGS 2, USD 2, EUR 2, RUB 2, KZT 2, UZS 2, TRY 2, CNY 2, GBP 2, JPY 0, KRW 0` и полный список ISO 4217 в `core/currencies.dart`; неизвестный код → 2.
 - `parseAmount(String text, String currency) → int?`: принимает `1234`, `1 234,50`, `1,234.50`, `1234.5`; разделитель — последний из `.`/`,`, если после него ≤ `minorUnits` цифр; без `double`. Больше знаков после разделителя, чем `minorUnits` → `null`.
-- `formatAmount(int minor, String currency, Locale)`: `NumberFormat` с группировкой по локали (ru: `1 234,50`, en: `1,234.50`), символ валюты — из `core/currencies.dart` (`KGS → "сом"` в ru и `"som"` в en; `USD → "$"`, `EUR → "€"`, `RUB → "₽"`, `KZT → "₸"`; иначе код). Глиф `⃀` (U+20C0) не используется, пока §12.1 не подтвердит его отрисовку на устройстве. Крупная сумма в hero (§8): целая часть кеглем `display`, дробная — на ступень меньше, как в Simbank.
+- `formatAmount(int minor, String currency, Locale)`: `NumberFormat` с группировкой по локали (ru: `1 234,50`, en: `1,234.50`), символ валюты — из `core/currencies.dart` (`KGS → "сом"` в ru и `"som"` в en; `USD → "$"`, `EUR → "€"`, `RUB → "₽"`, `KZT → "₸"`; иначе код). Глиф `⃀` (U+20C0) не используется, пока §12.1 не подтвердит его отрисовку на устройстве. **§12.1, 2026-09-29:** в Outfit и Onest глифа U+20C0 нет (проверено fontTools) — остаётся «сом»/«som»; системный fallback iOS на устройстве не проверялся. Крупная сумма в hero (§8): целая часть кеглем `display`, дробная — на ступень меньше, как в Simbank.
 
 ### 4.2 Курсы и базовая валюта (`lib/data/rates/`, `features/currencies/`)
 

@@ -360,7 +360,7 @@ void main() {
           ),
         ],
       );
-      await tester.pumpWidget(FintechApp(router: router));
+      await tester.pumpWidget(FintechApp(router: router, withLock: false));
       await tester.pump();
       addTearDown(router.dispose);
       return seen;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/security/presentation/lock_gate.dart';
 import '../l10n/app_localizations.dart';
 import 'theme.dart';
 
@@ -10,10 +11,14 @@ import 'theme.dart';
 /// [locale] — выбор из настроек (`app_settings.locale`, spec.md §8.1);
 /// `null` — как в системе: русский, если система русская, иначе английский.
 class FintechApp extends StatelessWidget {
-  const FintechApp({super.key, required this.router, this.locale});
+  const FintechApp({super.key, required this.router, this.locale, this.withLock = true});
 
   final GoRouter router;
   final Locale? locale;
+
+  /// Замок Face ID поверх роутера (§8.3 «Lock»); без него — только тест
+  /// темы, которому база не нужна.
+  final bool withLock;
 
   @override
   Widget build(BuildContext context) {
@@ -29,11 +34,14 @@ class FintechApp extends StatelessWidget {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       localeResolutionCallback: resolveLocale,
       // Тап по пустому месту прячет клавиатуру.
-      builder: (context, child) => GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-        child: child,
-      ),
+      builder: (context, child) {
+        final content = GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+          child: child,
+        );
+        return withLock ? LockGate(child: content) : content;
+      },
     );
   }
 

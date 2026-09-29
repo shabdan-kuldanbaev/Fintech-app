@@ -1,14 +1,63 @@
+import 'dart:async';
+
 import 'package:fintech/app/app.dart';
 import 'package:fintech/app/providers.dart';
 import 'package:fintech/app/router.dart';
 import 'package:fintech/core/clock.dart';
+import 'package:fintech/data/backup/backup_codec.dart';
+import 'package:fintech/data/backup/backup_files.dart';
 import 'package:fintech/data/rates/nbkr_client.dart';
+import 'package:fintech/features/security/app_lock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 import 'harness.dart';
+
+/// Face ID в тестах: отвечает [result], считает вызовы.
+class FakeAuthenticator implements Authenticator {
+  FakeAuthenticator([this.result = UnlockResult.unlocked]);
+  UnlockResult result;
+  int calls = 0;
+
+  /// Задан — «системный диалог Face ID» открыт, пока его не завершат.
+  Completer<void>? hold;
+
+  @override
+  Future<UnlockResult> unlock(String reason) async {
+    calls++;
+    await hold?.future;
+    return result;
+  }
+}
+
+/// Файлы копий в памяти; «выбор файла» отдаёт [picked].
+class MemoryBackupFiles implements BackupFileSystem {
+  final Map<String, String> files = {};
+  final List<String> shared = [];
+  String? picked;
+  BackupData? replacedWith;
+
+  @override
+  Future<String> write(String json, String isoDay) async {
+    final path = 'backups/fintech-backup-$isoDay.json';
+    files[path] = json;
+    return path;
+  }
+
+  @override
+  Future<List<String>> list() async => files.keys.toList()..sort((a, b) => b.compareTo(a));
+
+  @override
+  Future<void> share(String path) async => shared.add(path);
+
+  @override
+  Future<String?> pick() async => picked;
+
+  @override
+  Future<void> replaceDatabase(BackupData data, Future<void> Function() closeCurrent) async => replacedWith = data;
+}
 
 /// Курсы без сети: в тестах НБКР «недоступен», если тест не дал свои.
 class OfflineRates implements KgsRatesSource {
@@ -40,6 +89,8 @@ Future<AppUnderTest> pumpApp(
   double keyboard = 0,
   double dpr = 2,
   KgsRatesSource? rates,
+  Authenticator? authenticator,
+  BackupFileSystem? backupFiles,
 }) async {
   tester.view.devicePixelRatio = dpr;
   tester.view.physicalSize = size * dpr;
@@ -57,6 +108,8 @@ Future<AppUnderTest> pumpApp(
       appDatabaseProvider.overrideWithValue(h.db),
       clockProvider.overrideWithValue(h.clock as Clock),
       kgsRatesSourceProvider.overrideWithValue(rates ?? const OfflineRates()),
+      authenticatorProvider.overrideWithValue(authenticator ?? FakeAuthenticator()),
+      backupFileSystemProvider.overrideWithValue(backupFiles ?? MemoryBackupFiles()),
     ],
   );
   final router = createRouter(initialLocation: location);

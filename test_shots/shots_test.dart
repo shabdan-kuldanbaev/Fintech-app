@@ -3,6 +3,8 @@
 import 'package:fintech/app/router.dart';
 import 'package:fintech/features/accounts/domain/account.dart';
 import 'package:fintech/features/payments/domain/rule.dart';
+import 'package:fintech/features/security/app_lock.dart';
+import 'package:fintech/features/settings/domain/settings.dart';
 import 'package:fintech/features/transactions/domain/transaction.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,6 +41,9 @@ final List<Shot> shots = [
   (name: 'budgets', location: (d) => Routes.budgets, keyboard: 0, emptyDb: false),
   (name: 'rates', location: (d) => Routes.rates, keyboard: 0, emptyDb: false),
   (name: 'settings', location: (d) => Routes.settings, keyboard: 0, emptyDb: false),
+  (name: 'backup', location: (d) => Routes.backup, keyboard: 0, emptyDb: false),
+  // Замок: включён в настройках, Face ID отказал — «Try again».
+  (name: 'lock', location: (d) => Routes.home, keyboard: 0, emptyDb: false),
 ];
 
 void main() {
@@ -58,6 +63,7 @@ void main() {
             await tester.runAsync(() async {
               h = await Harness.create();
               if (!shot.emptyDb) demo = await Demo.seed(h);
+              if (shot.name == 'lock') await h.settings.write(SettingKeys.lockEnabled, true);
             });
             final app = await pumpApp(
               tester,
@@ -67,6 +73,7 @@ void main() {
               brightness: brightness,
               size: size,
               keyboard: size == iphone ? shot.keyboard : shot.keyboard * 0.85,
+              authenticator: FakeAuthenticator(shot.name == 'lock' ? UnlockResult.failed : UnlockResult.unlocked),
             );
             final overflow = tester.takeException();
             await expectLater(find.byType(MaterialApp), matchesGoldenFile('../build/shots/$file.png'));
