@@ -1,0 +1,9 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          # Менеджеры drift не используются: запросы пишут репозитории.
+          generate_manager: false
+          # I5: моменты — unix-секунды; текстовое хранение не включать.
+          store_date_time_values_as_text: false
