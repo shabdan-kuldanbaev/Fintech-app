@@ -1,6 +1,6 @@
 # PROGRESS
 
-Спецификация: `docs/spec.md` v1. Протокол: §13.
+Спецификация: `docs/spec.md` v1.1. Протокол: §13.
 
 ## Сейчас (обновлено 2026-09-29)
 
@@ -22,7 +22,7 @@
 
 ### Этап 2 — счета, транзакции, категории
 - [ ] Репозитории §3.4 + тесты
-- [ ] Экраны Onboarding, Home, Add transaction, Transaction, All transactions, Accounts, Account, New/Edit account, Categories
+- [ ] Экраны Home, Add transaction, Transaction, All transactions, Accounts, Account, New/Edit account, Categories
 - [ ] Критерий этапа на устройстве
 
 ### Этап 3 — обязательства и уведомления
@@ -49,6 +49,7 @@
 - [ ] 12.2 URL и формат XML НБКР → `test/fixtures/nbkr_daily.xml`
 - [ ] 12.3 `local_auth` на симуляторе
 - [ ] 12.4 `file_picker` / `share_plus` на iOS
+- [ ] 12.5 Фоновое действие уведомления на iOS (только устройство)
 
 ## Отклонения от спецификации
 (заполняется по этапам, §13.3)

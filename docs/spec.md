@@ -1,4 +1,4 @@
-# Fintech — Specification v1
+# Fintech — Specification v1.1
 
 Формат: спецификация для исполнителя (Claude Code). Правила используют MUST / MUST NOT / SHOULD / MAY.
 Идентификаторы (имена таблиц, колонок, файлов, параметров) — только латиницей, ровно как написано.
@@ -11,6 +11,10 @@ Flashcards (Jattap), простота и доступность интерфей
 (5) напоминания за 3 дня и в день платежа плюс дневная сводка; (6) бюджеты сразу; (7) резервная копия —
 JSON, вход по Face ID; (8) интерфейс английский и русский, название придумывается позже; (9) только iOS;
 (10) процесс — как во Flashcards: спецификация первична, протокол §13.
+
+v1.1 (2026-09-29): UX по `docs/ux-analysis.md` §5–8 и макету https://claude.ai/artifact/4cGeWkGN4hV8b7EXu22cWn —
+кнопка «+» вместо меню, сохранение выбором категории, «Quick add», hero «Safe to spend», «Pay» в строке,
+действия в уведомлениях, без онбординга; клавиатура системная, чипы частых трат над ней (решение заказчика).
 
 ---
 
@@ -123,6 +127,7 @@ class Accounts extends Table with SyncableTable {
   IntColumn get openingBalance => integer().withDefault(const Constant(0))(); // минимальные единицы; loan: -total_payable на старте
   IntColumn get creditLimit => integer().nullable()();    // credit_line: лимит; иначе null
   IntColumn get dueDay => integer().nullable()();         // credit_line: день месяца оплаты 1..28; иначе null
+  IntColumn get minPayment => integer().nullable()();     // credit_line: минимальный платёж (фикс. сумма); иначе null
   // --- loan (простая модель, §4.3) ---
   IntColumn get principal => integer().nullable()();      // сколько взяли
   IntColumn get totalPayable => integer().nullable()();   // сколько всего вернуть (Simbank «Итого»)
@@ -154,6 +159,7 @@ class Categories extends Table with SyncableTable {
   TextColumn get colorKey => text()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   BoolColumn get isSystem => boolean().withDefault(const Constant(false))(); // 'adjustment' — не показывается в выборе
+  TextColumn get lastAccountId => text().nullable()();     // счёт последней транзакции этой категории (§8.3 «Add»)
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -193,7 +199,7 @@ class RecurringRules extends Table with SyncableTable {
   IntColumn get remindMinutes => integer().nullable()();  // минуты от 00:00 локального; null — app_settings 'notifications.default_minutes'
   IntColumn get notificationBaseId => integer()();        // app_settings 'notifications.next_id', шаг 8 (I11)
   BoolColumn get autoPay => boolean().withDefault(const Constant(false))(); // подписка списывается сама: наступление помечается paid в день due (§5.3)
-  BoolColumn get isPaused => boolean().withDefault(const Constant(false))();
+  TextColumn get pausedUntil => text().nullable()();      // YYYY-MM-DD: наступлений с due_date < paused_until нет; null — активно; '9999-12-31' — пауза без срока
   TextColumn get iconKey => text()();
   TextColumn get colorKey => text()();
   @override
@@ -280,9 +286,9 @@ class AppDatabase extends _$AppDatabase {
 
 | key | тип | дефолт |
 |---|---|---|
-| `base_currency` | `string` ISO 4217 | по стране локали устройства: `KG → KGS`, `RU → RUB`, `KZ → KZT`, `US → USD`, `EU-страны → EUR`; иначе `USD`. Спрашивается на онбординге (§8) |
+| `base_currency` | `string` ISO 4217 | по стране локали устройства при первом запуске: `KG → KGS`, `RU → RUB`, `KZ → KZT`, `UZ → UZS`, `US → USD`, страны еврозоны → `EUR`; иначе `USD`. Онбординга нет; меняется в настройках (§4.2) |
 | `locale` | `"system" \| "en" \| "ru"` | `"system"` |
-| `onboarding_done` | `bool` | `false` |
+| `bootstrap_done` | `bool` — первый запуск выполнен (§3.4) | `false` |
 | `notifications.next_id` | `int` | `1000` |
 | `notifications.default_minutes` | `int` | `600` (10:00) |
 | `notifications.digest_enabled` | `bool` | `true` |
@@ -290,21 +296,22 @@ class AppDatabase extends _$AppDatabase {
 | `lock.enabled` | `bool` | `false` |
 | `lock.after_seconds` | `int` | `60` |
 | `rates.last_fetch` | `string \| null` — ISO-8601 UTC | `null` |
-| `default_account_id` | `string \| null` — счёт по умолчанию в «Add expense» | первый созданный |
+| `last_account_id` | `string \| null` — счёт последней записанной транзакции | `Cash` |
 | `home.month_start_day` | `int` 1..28 — с какого числа считается «месяц» на Главной и в бюджетах (зарплата 5-го) | `1` |
 
 ### 3.4 Инварианты данных при записи (репозиторий)
 
-- **Первый запуск** (`onboarding_done = false`, §8 «Onboarding»): в одной транзакции — счёт `Cash` (`kind = 'cash'`, базовая валюта, `iconKey = 'wallet'`, `colorKey = 'mint'`), системная категория `adjustment` (`kind = 'expense'`, `isSystem = 1`) и предустановленные категории §3.5. `default_account_id = Cash`.
-- **Транзакция** (`createTransaction` / `updateTransaction`): `amount > 0`; `currency = accounts.currency`; `expense`/`income` требуют `category_id` того же `kind` (для `adjustment` — любой kind); `transfer` требует `counter_account_id != account_id`, `category_id = null`, `counter_amount` (равен `amount` при одной валюте; при разных — обязателен явно, конвертер §4.2 лишь подсказывает); `base_amount = toBase(amount, currency)` (§4.2) на момент записи. Иначе — исключение, ничего не пишется.
+- **Первый запуск** (`bootstrap_done = false`, при старте приложения, без экрана): в одной транзакции — `base_currency` по локали (§3.3), счёт `Cash` (`kind = 'cash'`, базовая валюта, `iconKey = 'wallet'`, `colorKey = 'mint'`), системная категория `adjustment` (`kind = 'expense'`, `isSystem = 1`), предустановленные категории §3.5, `last_account_id = Cash`, `bootstrap_done = true`.
+- **Транзакция** (`createTransaction` / `updateTransaction`): после записи — `app_settings.last_account_id = account_id` и `categories.last_account_id = account_id` (для expense/income), в той же транзакции БД. 
+  Проверки: `amount > 0`; `currency = accounts.currency`; `expense`/`income` требуют `category_id` того же `kind` (для `adjustment` — любой kind); `transfer` требует `counter_account_id != account_id`, `category_id = null`, `counter_amount` (равен `amount` при одной валюте; при разных — обязателен явно, конвертер §4.2 лишь подсказывает); `base_amount = toBase(amount, currency)` (§4.2) на момент записи. Иначе — исключение, ничего не пишется.
 - **Удаление транзакции**: `deleted_at = now`. Если `occurrence_id != null` — MUST идти через `unpayOccurrence` (I9).
 - **Счёт**: `kind` из списка §3.1; `credit_line` требует `credit_limit > 0` и `due_day`; `loan` требует `total_payable > 0`, `monthly_payment > 0`, `term_months ≥ 1`, `first_payment_date`; `opening_balance` для `loan` = `-total_payable`, для `credit_line` = `-текущий долг` (вводится при создании, обычно 0). Смена `currency` у счёта с транзакциями MUST быть запрещена.
 - **Создание кредита** (`createLoan`, одна транзакция): счёт `loan` + правило `loan_payment` (`frequency = 'monthly'`, `day_of_month` = день `first_payment_date`, `start_date = first_payment_date`, `end_date = start + (term_months − 1) месяцев`, `amount = monthly_payment`, `counter_account_id = loan`, `category_id = null`, `auto_pay = 0`) + все `term_months` наступлений сразу (§5.2), `seq = 1..n`. Последнее наступление получает `amount_expected = total_payable − monthly_payment × (n − 1)`, чтобы сумма графика совпала с `total_payable` тыйын в тыйын.
-- **Создание кредитной линии** (`createCreditLine`, одна транзакция): счёт `credit_line` + правило `credit_line_payment` (`monthly`, `day_of_month = due_day`, `amount = null`, `counter_account_id` = этот счёт, `start_date` = ближайшая дата с этим днём > сегодня).
-- **Оплата наступления** (`payOccurrence(occurrenceId, amount, accountId, date)`, I9): наступление `planned` → создать транзакцию: для `loan_payment`/`credit_line_payment` — `transfer` с `account_id = accountId`, `counter_account_id = rule.counter_account_id`; иначе — `expense` с `category_id = rule.category_id`; `occurrence_id` = это наступление; `date` = переданная (по умолчанию сегодня); затем `UPDATE occurrences SET status = 'paid', transaction_id, paid_at = now`. Сумма — введённая; при `amount_expected != null` предзаполняется.
+- **Создание кредитной линии** (`createCreditLine`, одна транзакция): счёт `credit_line` (`min_payment` необязателен) + правило `credit_line_payment` (`monthly`, `day_of_month = due_day`, `amount = null`, `counter_account_id` = этот счёт, `start_date` = ближайшая дата с этим днём ≥ сегодня).
+- **Оплата наступления** (`payOccurrence(occurrenceId, amount, accountId, date)`, I9): `amount` — в валюте счёта `accountId`; если валюта правила другая, форма предлагает `convert(amount_expected, rule.currency → account.currency)` по курсу §4.2, пользователь может исправить; наступление `planned` → создать транзакцию: для `loan_payment`/`credit_line_payment` — `transfer` с `account_id = accountId`, `counter_account_id = rule.counter_account_id`; иначе — `expense` с `category_id = rule.category_id`; `occurrence_id` = это наступление; `date` = переданная (по умолчанию сегодня); затем `UPDATE occurrences SET status = 'paid', transaction_id, paid_at = now`. Сумма — введённая; при `amount_expected != null` предзаполняется.
 - **Отмена оплаты** (`unpayOccurrence`): транзакция → `deleted_at`, наступление → `planned`, `transaction_id = null`, `paid_at = null`. Одна транзакция БД.
 - **Пропуск**: `status = 'skipped'`. Обратно — `planned`.
-- **Правило**: правка полей расписания → `replanRule` (§5.2). `is_paused = 1` → новые наступления не создаются, существующие `planned` с `due_date > сегодня` помечаются `deleted_at`.
+- **Правило**: правка полей расписания → `replanRule` (§5.2): `planned` наступления с `due_date ≥ сегодня` помечаются `deleted_at`, затем материализация заново. «Pause until D» (`paused_until = D`; «без срока» — `'9999-12-31'`) → `planned` наступления с `due_date` в `[сегодня, D)` помечаются `deleted_at`; с `D` правило порождает наступления само. «Resume» → `paused_until = null`, replan.
 - **Удаление правила**: `deleted_at` у правила и всех его `planned` наступлений; `paid`/`skipped` и их транзакции остаются. Удаление счёта `loan`/`credit_line`: удаляет (soft) и связанное правило по тем же правилам; счёт с транзакциями удалять MUST быть запрещено — только архив (`is_archived = 1`).
 - **Бюджет** (`setBudget(categoryId, month, amount)`): существует строка с тем же `category_id` и `from_month` → `UPDATE amount`; иначе `INSERT`. `amount = 0` → строка помечается `deleted_at` (бюджет снят с этого месяца).
 - **Курсы**: `upsertRate(code, rateMicro, source)`. Смена базовой валюты (§4.2) — одна транзакция: пересчёт всех `rates`, `base_amount` всех транзакций, `budgets.amount`.
@@ -330,6 +337,7 @@ class AppDatabase extends _$AppDatabase {
 
 - Базовая валюта `base_currency` — валюта Главной, статистики, бюджетов. Счета могут быть в любой.
 - `toBase(amount, currency)`: `currency == base` → `amount`; иначе `amount × rate_micro(currency) / 1e6` в минимальных единицах базовой, округление half-up, целочисленно. Нет курса → `MissingRate(currency)`: репозиторий требует ввести курс до записи транзакции (форма показывает поле курса).
+- `convert(amount, from, to)` = `fromBase(toBase(amount, from), to)`, целочисленно, half-up. Используется только для подсказок в формах (перевод, оплата в чужой валюте), в записи хранится то, что в поле.
 - Источник курсов: `lib/data/rates/nbkr_client.dart` — GET `https://www.nbkr.kg/XML/daily.xml` (официальные курсы НБКР к сому; формат и точный URL проверяются в §12.2). Разбор `xml`. Курс к базовой: через сом как pivot: `rate(X→base) = rate(X→KGS) / rate(base→KGS)`, `rate(KGS→KGS) = 1`. Если базовая валюта не в списке НБКР — сеть бесполезна, только ручной ввод.
 - Загрузка — только при открытии экрана «Currencies» (если `rates.last_fetch` старше 24 ч) и по кнопке «Refresh» (I12). Ручной курс (`source = 'manual'`) сетью MUST NOT перезаписываться.
 - Смена базовой валюты (одна транзакция БД, §3.4): новый `rate_micro'(X) = rate_micro(X) / rate_micro(newBase) × 1e6`, для старой базы — `1e6 / rate_micro(newBase) × 1e6`; `base_amount` каждой транзакции — заново из `amount` и нового курса её валюты; `budgets.amount` — через старый курс новой базы. Нет курса новой базы → операция запрещена с подсказкой ввести курс.
@@ -352,17 +360,17 @@ class AppDatabase extends _$AppDatabase {
 - `weekly`: `start_date + 7·k·interval` дней.
 - `yearly`: та же дата ежегодно; 29 февраля → 28 февраля в невисокосный.
 - `every_n_days`: `start_date + n·k`.
-- Не раньше `start_date`, не позже `end_date` (если задан), `is_paused = 0`.
+- Не раньше `start_date` и не раньше `paused_until` (если задан), не позже `end_date` (если задан).
 - Перенос с выходных и праздников не делается (решение: банки Кыргызстана списывают по календарю; вне v1 — §14).
 
 ### 5.2 Материализация (`OccurrencePlanner.replan`, репозиторий)
 
 Вызывается при старте приложения, после создания/правки/паузы/удаления правила, после смены даты (полночь по локальному времени — при следующем возвращении в приложение), после оплаты/отмены оплаты.
 1. Горизонт: `loan_payment` — весь срок (`end_date` обязателен, ≤ 360 наступлений); остальные — `сегодня + 92 дня`, не меньше одного будущего наступления.
-2. Для каждого активного правила: даты §5.1 от `max(start_date, последнее существующее due_date + 1 день)` до горизонта → `INSERT occurrences` (`seq` продолжает нумерацию, `amount_expected = rule.amount`, `currency = rule.currency`). Существующие строки не трогаются (I10).
+2. Для каждого живого правила (`deleted_at IS NULL`): даты §5.1 от `max(start_date, последнее существующее due_date + 1 день)` до горизонта → `INSERT occurrences` (`seq` продолжает нумерацию, `amount_expected = rule.amount`, `currency = rule.currency`). Существующие строки не трогаются (I10).
 3. `credit_line_payment`: у `planned` наступлений `amount_expected` обновляется на текущий долг счёта (`max(0, −balance)`, §9.1); при долге 0 наступление остаётся `planned` с `amount_expected = 0` и в списках показывается серым «Nothing to pay».
 4. `auto_pay = 1` (§5.3): `planned` наступления с `due_date ≤ сегодня` и `amount_expected != null` и `account_id != null` → `payOccurrence` суммой `amount_expected` датой `due_date`.
-5. Затем `ReminderPlanner.replan()` (§6).
+5. Затем `ReminderPlanner.replan()` (§6). `paused_until` в пределах 3 дней от сегодня → в сводке этого дня строка «<rule> resumes <date>».
 
 Просрочка: `planned` с `due_date < сегодня` — «overdue», ничего автоматически не меняется, пользователь платит или пропускает.
 
@@ -390,6 +398,7 @@ class AppDatabase extends _$AppDatabase {
 3. **Сводка** (`digest_enabled`): для дней `d = 0..6` от сегодня, `t_d` = `d`-й день в `digest_minutes` локального, строго больше `now`; `n_d` = число `planned` наступлений с `due_date == день t_d` (плюс для `d = 0` — все просроченные), `sum_d` — их `amount_expected` в базовой валюте. `n_d > 0` → `zonedSchedule(id: 1 + d, title: "Payments today", body: "3 payments · 12 400 som")`; `n_d == 0` → ничего. Тексты — из ARB по локали приложения на момент планирования.
 4. **По правилам**: кандидаты — для каждого `planned` наступления (`due_date ≥ сегодня`, правило не на паузе) и каждого `days_before ∈ remind_days_before`: момент `due_date − days_before` в `remind_minutes ?? default_minutes`, строго больше `now`. Сортировка по времени, берутся первые `64 − 7 = 57`; на правило — не больше 8 (`k = 0..7` в порядке времени, лишние отбрасываются). `zonedSchedule(id: base + k, title: rule.name, body: "Due tomorrow · 2 584,31 som" / "Due today · …" / "Due in 3 days · …", payload: occurrence.id, androidScheduleMode: AndroidScheduleMode.inexact)` — без `matchDateTimeComponents`.
 5. `amount_expected == null` → в теле «Amount not set».
+6. **Действия** (категория уведомлений iOS `payment`, регистрируется в `DarwinInitializationSettings.notificationCategories`): у уведомления по правилу с известной суммой (`amount_expected != null`, `rule.account_id != null`, вид не `credit_line_payment`) — `paid` («Paid», фон) и `snooze` («Remind tomorrow», фон); иначе категории нет, только тап. Обработчик фона (`onDidReceiveBackgroundNotificationResponse`, top-level функция с `@pragma('vm:entry-point')`) открывает БД, выполняет `payOccurrence` суммой `amount_expected` со счёта `rule.account_id` датой сегодня (`paid`) или планирует одноразовое напоминание на завтра в то же время с id `base + 7` (`snooze`), затем `ReminderPlanner.replan()`. Наступление уже `paid`/удалено → ничего. Если §12.5 покажет, что фоновый обработчик на iOS не работает без открытия приложения, — действия получают `DarwinNotificationActionOption.foreground` и выполняются при открытии; это запись в «отклонения», не остановка.
 
 Тап: `payload` = id наступления → `push('/occurrence/:id')`; наступление уже `paid`/удалено → `/payments` с тостом «Already paid»; сводка (`id ≤ 7`) → `/payments`. Верхний экран совпадает с целью → второй тап ничего не кладёт поверх.
 
@@ -417,6 +426,15 @@ class AppDatabase extends _$AppDatabase {
 - **Форма кредита**: сверху капсула «Amount · Rate · Total», в центре крупно «N months × payment», под ним горизонтальная шкала месяцев с рисками, снизу залитая пилюля «Next».
 - **Разделы списком** с круглыми иконками (экран «Payments» у них) — для нашего экрана «New» и настроек.
 - Чёрных заливок нет — графит `_ink`; нижняя панель — стекло Jattap, а не белая полоса Simbank.
+
+Правила вёрстки (из проверки макета 2026-09-29, `docs/ux-analysis.md` §8; страж — widget-тест `test/app/layout_test.dart` в обеих локалях при ширине 320 и 390 pt):
+- Сумма и кнопка с суммой не переносятся и не сжимаются (`maxLines: 1`, `softWrap: false`, вне `Flexible`); при нехватке места обрезается название строки (`TextOverflow.ellipsis`).
+- Сумма к оплате живёт в кнопке: «Pay 2 584,31»; неизвестная — «Enter amount»; кредитная линия — «Pay…»; автооплата — сумма серым без кнопки.
+- Горизонтальные ленты (чипы, «Recent») уходят под боковые поля до края экрана; обрезка только краем экрана.
+- Сегмент из трёх пунктов — отдельной строкой под шапкой, не в шапке рядом с кнопками.
+- Всё частое — в нижней половине экрана: на экране ввода порядок сверху вниз — сумма, строка «счёт · дата · заметка», категории, чипы «Quick add», клавиатура.
+- Hero и итоги секций — целые единицы валюты; строки списков — точные, с дробной частью.
+- Обратимые действия (сохранение, оплата, пропуск, удаление транзакции) — без диалогов, тост «Undo» 4 с. Диалог — только импорт копии, удаление счёта/категории/правила, смена базовой валюты.
 
 ### 8.1 Локализация
 
@@ -446,32 +464,29 @@ class AppDatabase extends _$AppDatabase {
 | `/settings` | Settings |
 | `/settings/currencies` | Currencies |
 | `/settings/backup` | Backup |
-| `/onboarding` | Onboarding (первый запуск) |
 | `/lock` | Lock (Face ID) |
 
-Панель вкладок: слева стеклянная капсула Home / Payments / Accounts, справа стеклянная капсула **New** с меню: Expense, Income, Transfer, Payment (подменю: Subscription / Utility / Other). Кредит и кредитная линия создаются с вкладки Accounts (у них свои формы). Шапка Home: слева круглая кнопка Stats (иконка столбиков, как в Simbank над лентой), справа Settings.
+Панель вкладок: слева стеклянная капсула Home / Payments / Accounts, справа стеклянная капсула с графитовой кнопкой **«+»** без меню → `/transaction/new?kind=expense`. Правила создаются кнопкой «+» в шапке вкладки Payments, счета, кредиты и кредитные линии — кнопкой «+» в шапке Accounts (там меню: Cash or card, Savings, Deposit, Loan, Credit line). Шапка Home: слева круглая кнопка Stats, по центру сегодняшняя дата, справа Settings.
 
 ### 8.3 Экраны
 
-**Onboarding.** Три шага в одном экране-пейджере: язык (System / English / Русский), базовая валюта (список §4.1 с поиском, предвыбор по локали), «Cash» — стартовый баланс (MAY пропустить, 0). «Start» → §3.4 «Первый запуск» → `/`.
+**Home.** Hero: «Safe to spend until <date>» (§9.7) крупно, целым; под ним строки «Own funds N» и «To pay N». Строка «Quick add · 1 tap» — до 6 чипов §9.8 (скрыта, пока их нет); тап по чипу записывает транзакцию и показывает тост «Saved · <label>» с «Undo» и «Edit». «Upcoming» — список (не карусель) `planned` наступлений на 30 дней: сначала просроченные (румянец), максимум 5 строк; заголовок справа «30 days · N» → `/payments`; строка — иконка правила, имя (обрезается), подпись «Tomorrow · 1 of 2» / «Overdue 4 days», справа кнопка по правилам §8.0; тап по кнопке «Pay N» оплачивает на месте (`payOccurrence` суммой `amount_expected` со счёта правила, тост «Paid · Undo»), «Enter amount» и «Pay…» открывают `/occurrence/:id`; тап по строке — `/occurrence/:id`. «Recent» — транзакции за 30 дней по дням, заголовок дня «TODAY · 34,00 SOM», справа «All» → `/transactions`. Пусто (нет транзакций и правил): карточка «Add your first expense» с кнопкой и строка «Currency: KGS · Change» → `/settings/currencies`.
 
-**Home.** Hero: «Own funds» = Σ балансов счетов `cash`/`card`/`savings`/`deposit` с `include_in_total = 1` в базовой валюте (§9.1). Строки: «Credit available» = Σ по `credit_line` (`credit_limit + balance`); «Debt» = Σ долгов `loan` + `credit_line`; «Spent this month» = §9.3 за текущий месяц (месяц — от `home.month_start_day`) с «of budget N», если задан общий бюджет. Ряд действий: Add expense, Add income, Transfer. Секция «Upcoming»: горизонтальная лента до 5 ближайших `planned` наступлений на 30 дней, просроченные первыми (румянец) — карточка 148×96: имя правила, сумма, «Tomorrow» / «In 3 days» / «Overdue 2 days», тап → `/occurrence/:id`; пусто → секция скрыта. Дальше лента транзакций по дням (§8.0) за последние 30 дней, заголовок «Recent» с кнопкой «All» → `/transactions`. Пустая Главная: карточка «Add your first expense» с кнопкой.
+**Add transaction.** Шапка: круглая «✕», заголовок «Add». Под шапкой — сегмент Expense / Income / Transfer. Сумма крупно, системная цифровая клавиатура (`TextInputType.numberWithOptions(decimal: true)`) открыта сразу, автофокус. Под суммой строка чипов: счёт («Card ▾»), дата («Today ▾»), «Note». Затем сетка категорий 4 × 2 (последний пункт — «More» с остальными), сортировка — по частоте за 60 дней, затем `sort_order`; ниже — чипы «Quick add» этого вида (§9.8). **Тап по категории при непустой сумме сохраняет** и закрывает экран с тостом «Saved · Undo · Edit»; при пустой сумме — встряхивание поля суммы. Счёт по умолчанию: при выборе категории он меняется на `categories.last_account_id` (если счёт не менялся вручную на этом экране), иначе `app_settings.last_account_id`. Transfer: вместо категорий — «From ▾» (по умолчанию `last_account_id`) и список счетов «To» кнопками; тап по счёту «To» сохраняет; при разных валютах перед сохранением показывается второе поле суммы с подсказкой `convert` (§4.2) и кнопка «Save». Открытый из наступления (`occurrence=`) — сумма и категория предзаполнены, сохранение = `payOccurrence`. Кнопки «Save» нет нигде, кроме перевода в разных валютах и правки существующей транзакции.
 
-**Add transaction.** Первый экран после «New → Expense» — сразу цифровая клавиатура, поле суммы крупно в валюте счёта, под ним чипы категорий (в порядке `sort_order`, последние использованные первыми; для Income — категории дохода), строка «Account: Cash ▾» (счёт по умолчанию), дата (сегодня, тап → выбор), заметка. Переключатель сверху Expense / Income / Transfer сегментом. Transfer: «From ▾» / «To ▾», при разных валютах — второе поле суммы с подсказкой по курсу (§4.2). Save — пилюля в стеклянной панели; после Save на Главной тост «Saved» и возврат; в форме, открытой из наступления (`occurrence=`), сумма и категория предзаполнены и Save = `payOccurrence`.
+**Transaction.** Все поля, правка, «Save». «Delete» — без диалога, тост «Deleted · Undo». Связано с наступлением → плашка «Payment for <rule> · <date>» и «Undo payment» вместо «Delete».
 
-**Transaction.** Все поля, правка, «Delete» (диалог). Связано с наступлением → плашка «Payment for <rule> · <date>» и «Undo payment» вместо «Delete».
+**All transactions.** Поиск по заметке и имени категории, фильтры чипами: счёт, категория, вид, месяц. Лента по дням; итог периода в шапке.
 
-**All transactions.** Поиск по заметке и имени категории, фильтры чипами: счёт, категория, вид, месяц. Лента по дням; итоги за выбранный период в шапке.
+**Payments.** Шапка: сегмент Upcoming / Rules по центру, справа «+» → `/rule/new`. Upcoming — заголовок «Next 30 days» с суммой справа; наступления на 92 дня группами Overdue (румянец), Tomorrow · <date> / Today, This week, Later; строки и кнопки — как «Upcoming» на Главной; свайп влево — «Skip» (тост «Skipped · Undo»). Rules — правила по видам (Loans, Credit lines, Subscriptions, Utilities, Other) с суммой в месяц по виду (§9.5); строка → `/rule/:id`; на паузе — серым с «Paused until <date>».
 
-**Payments.** Сегмент сверху: **Upcoming** / **Rules**. Upcoming — список наступлений на 92 дня, сгруппированный: Overdue (румянец), Today, This week, Later; строка: иконка правила, имя, «3 of 24» для кредитов, сумма (или «Enter amount»), справа кнопка-пилюля «Pay» (открывает `/occurrence/:id`); свайп влево — Skip. Суммарная строка сверху «Due in 30 days · N». Rules — список правил по видам (Loans, Credit lines, Subscriptions, Utilities, Other) с суммой в месяц по виду (§9.5); строка → `/rule/:id`; на паузе — серым.
+**Occurrence.** Шапка: «‹», имя правила, «⋯» (Skip, Edit rule). Карточка: иконка, «<вид> · <расписание>», «Due <date> · overdue N days» (румянец) / «in N days». Сумма крупно — поле с автофокусом, если `amount_expected == null`; под ним чип «Last month · N» (сумма последнего `paid`), тап подставляет. Строка чипов «From Card ▾», «Today ▾». Для правила в чужой валюте — строка «$400 ≈ 34 800 som · 87,00», поле — в валюте счёта. Для `credit_line_payment` — три чипа «Full N» / «Minimum N» (если `min_payment`) / «Other». Стеклянная панель над клавиатурой: «Skip» и «Pay N som». Для `paid` — «Undo payment».
 
-**Occurrence.** Карточка: имя правила, дата, «3 of 24», сумма (редактируемая, если `null` — поле с автофокусом), счёт списания (`rule.account_id`, можно сменить), дата оплаты (сегодня). Кнопки: «Pay» (пилюля), «Skip», для `paid` — «Undo payment». Для `credit_line_payment` — текущий долг и «Pay in full» / своя сумма.
+**New payment rule / Payment rule.** Шапка «‹ New payment», под ней сегмент Subscription / Utility / Other. Три поля сверху: имя, сумма с валютой (для utility — переключатель «Amount varies»), «Next charge <date> · monthly ▾». Ниже карточка с умолчаниями: категория, счёт списания (последний счёт правил этого вида), напоминания, «Auto-pay» (подписки — вкл). Остальные поля по §5.3: сумма и валюта (для utility — переключатель «Amount varies»), категория, счёт списания, периодичность (Monthly / Weekly / Yearly / Every N days), день месяца / дата первого платежа, дата окончания (необязательна), напоминания (чипы «3 days before», «1 day before», «On the day», время), «Auto-pay» (подписки — вкл по умолчанию), иконка и цвет. На экране правила снизу — список наступлений (paid зелёной галочкой, skipped серым), меню «⋯»: Pause until… / Resume, Delete (диалог).
 
-**New payment rule / Payment rule.** Поля по §5.3: имя, вид (сегмент), сумма и валюта (для utility — переключатель «Amount varies»), категория, счёт списания, периодичность (Monthly / Weekly / Yearly / Every N days), день месяца / дата первого платежа, дата окончания (необязательна), напоминания (чипы «3 days before», «1 day before», «On the day», время), «Auto-pay» (подписки — вкл по умолчанию), иконка и цвет. На экране правила снизу — список наступлений (paid зелёной галочкой, skipped серым), меню «⋯»: Pause / Resume, Delete.
+**Accounts.** Шапка: заголовок «Accounts», справа «+» с меню (Cash or card, Savings goal, Deposit, Loan, Credit line). Секции: Money (cash, card — плитки по две в ряд; savings, deposit — во всю ширину с пилюлей прогресса) и Credit (credit_line, loan — во всю ширину): имя, баланс/долг крупно, подпись «−7 119 this month» / «176 000 available of 200 000» / «1 of 2 paid · 2 584,31 / month», пилюля. Итог секции в заголовке капителью, целым. Архивные — строкой-ссылкой «Archived accounts · N ›».
 
-**Accounts.** Секции: Money (cash, card, savings, deposit), Credit (credit_line, loan). Карточка счёта: имя, вид, баланс (для пассивов — долг и «available N of limit» / «paid 3 of 24»), пастель по `color_key`, архивные — в свёрнутой секции внизу. Итог секции в заголовке. Кнопки внизу: «New account», меню: Cash/Card, Savings goal, Deposit, Loan, Credit line.
-
-**Account.** Hero: баланс (пассив — долг), строки по виду: cash/card — «This month: −spent / +income»; credit_line — «Limit», «Available», «Due day»; loan — «Monthly payment», «Paid 3 of 24», «Next payment <date>», «Remaining»; savings — «Goal», «Left», «By <date>» и пилюля прогресса; deposit — «Rate», «Ends». Действия: Add expense / Add income / Transfer (для пассивов — «Pay», открывает ближайшее `planned` наступление). Лента транзакций счёта по дням. Меню «⋯»: Edit, Archive/Unarchive, Recalculate schedule (loan, §4.3), Delete (только без транзакций).
+**Account.** Hero: баланс (пассив — долг), строки по виду: cash/card — «This month: −spent / +income»; credit_line — «Limit», «Available», «Due day»; loan — «Monthly payment», «Paid 3 of 24», «Next payment <date>», «Remaining»; savings — «Goal», «Left», «By <date>» и пилюля прогресса; deposit — «Rate», «Ends». Ряд круглых действий: cash/card — Add expense / Add income / Transfer; loan — «Pay N» (ближайшее наступление, оплата на месте), «Extra payment», «Recalculate»; credit_line — «Pay…», «Add purchase». Для loan — секция «Schedule» (все наступления, оплаченные галочкой) над лентой транзакций. Лента транзакций счёта по дням. Меню «⋯»: Edit, Archive/Unarchive, Recalculate schedule (loan, §4.3), Delete (только без транзакций).
 
 **New loan.** Как в Simbank (§8.0): имя, сумма, валюта, шкала месяцев 1..60, ставка (поле + сегмент «per month / per year», MAY пусто), результат «N months × payment» и «Total» — оба редактируемы (§4.3), дата первого платежа, счёт списания, «Next» → создаётся всё разом (§3.4). Ставка редактируется — пересчитываются платёж и итого; платёж редактируется — итого; итого — платёж.
 
@@ -513,6 +528,12 @@ class AppDatabase extends _$AppDatabase {
 ### 9.6 `Clock`
 Интерфейс `DateTime now()` (UTC). `SystemClock` в приложении, `FakeClock` в тестах. Локальная дата — `core/calendar.dart: today(clock)`.
 
+### 9.7 Safe to spend
+`period_end` = следующая дата `home.month_start_day` строго после сегодня (5-е → «until Oct 5»). `to_pay` = Σ `amount_expected` в базовой валюте по `planned` наступлениям с `due_date < period_end` (включая просроченные), кроме `auto_pay = 1` по правилам, чей счёт не входит в Own funds, и кроме `credit_line_payment` (долг по карте уже учтён отдельно и гасится по выбору); наступления без суммы — по последнему `paid` этого правила, нет — 0. `safe = own_funds − to_pay`; отрицательное показывается румянцем «−N».
+
+### 9.8 Quick add (`features/transactions/domain/frequent.dart`, без I/O)
+Вход — транзакции за 60 дней до сегодня (не `adjustment`, не оплаты наступлений). Ключ группы: `(kind, category_id ?? counter_account_id, account_id, amount, lower(trim(note)))`. Группы с ≥ 2 повторениями, сортировка по числу повторений, затем по дате последней; до 6. Подпись чипа: заметка, иначе имя категории, иначе «<from> → <to>»; « · » и сумма без дробной части, если она нулевая. Тап по чипу записывает транзакцию с ключом группы и датой сегодня. Для перевода — «ATM · 10 000».
+
 ---
 
 ## 10. Структура проекта и CLAUDE.md
@@ -539,7 +560,6 @@ lib/
     notifications/ reminder_planner.dart, notification_gateway.dart, notification_taps.dart
     security/     app_lock.dart, presentation/
     settings/     data/ presentation/
-    onboarding/   presentation/
 test/
   core/           calendar_test.dart, money_test.dart
   accounts/       balances_test.dart, loan_math_test.dart, create_loan_test.dart, create_credit_line_test.dart
@@ -570,18 +590,18 @@ test/
 - `loan_math.dart` + тест (аннуитет на известных примерах: Simbank 5 000 сом, 2 месяца, 2,24 %/мес → платёж 2 584,31 точно (проверено 2026-09-29: формула даёт 2 584,3101); итого по формуле 5 168,62, Simbank показывает 5 168,60 — банк округляет итог по-своему, поэтому в форме итого редактируемо, а тест сверяет итого с допуском 5 тыйын; ставка 0; годовая ставка; пересчёт остатка «keep payment» / «keep term»).
 - `schedule.dart` + тест (все частоты, `day_of_month = 31`, `end_date`, пауза).
 - Стражи `invariants_test.dart` на I1–I20, каждый проверен мутацией. `arb_keys_test.dart`.
-- Критерий: `tool/verify.sh` зелёный; приложение запускается на iPhone, показывает онбординг и пустую Главную на обоих языках.
+- Критерий: `tool/verify.sh` зелёный; приложение запускается на iPhone, показывает пустую Главную на обоих языках.
 
 **Этап 2 — счета, транзакции, категории.**
 - Репозитории §3.4 (первый запуск, транзакции, переводы, счета) + тесты `transactions/`, `accounts/balances_test.dart`.
-- Экраны: Onboarding, Home (без «Upcoming»), Add transaction, Transaction, All transactions, Accounts, Account, New account, Edit account, Categories.
-- Критерий: на устройстве — онбординг, 10 расходов за 3 дня, доход, перевод между счетами; лента по дням с итогами, балансы сходятся с §9.1 вручную.
+- Экраны: Home (без «Upcoming»), Add transaction, Transaction, All transactions, Accounts, Account, New account, Edit account, Categories.
+- Критерий: на устройстве — первый запуск без экранов, 10 расходов за 3 дня (половина — чипами Quick add), доход, перевод между счетами; лента по дням с итогами, балансы сходятся с §9.1 вручную.
 
 **Этап 3 — обязательства и уведомления.**
 - `OccurrencePlanner` + тесты (`occurrence_planner_test.dart`: идемпотентность, горизонт, `paid` не трогается, кредит целиком, `credit_line` обновляет сумму; `auto_pay_test.dart`; `pay_occurrence_test.dart`: одна транзакция, откат).
 - `createLoan`, `createCreditLine` + тесты. Экраны: Payments, Occurrence, New payment rule, Payment rule, New loan, New credit line, Account для пассивов, секция «Upcoming» на Главной.
 - `ReminderPlanner` + тест (сводка id 1..7 только при `n_d > 0`; правило ≤ 8 id; всего ≤ 64; порядок по времени; ничего без разрешения; ни одного `matchDateTimeComponents`; тексты в ru и en).
-- Маршрутизация по payload (тёплый и холодный старт).
+- Маршрутизация по payload (тёплый и холодный старт), действия `paid` / `snooze` (§6.6).
 - Критерий: на устройстве — кредит из скриншота Simbank (5 000 / 2 мес / 2,24 %), подписка с автооплатой, коммуналка без суммы; уведомление за 3 дня и в день приходит в заданное время, тап открывает наступление, «Pay» создаёт транзакцию, остаток кредита уменьшается; сводка утром.
 
 **Этап 4 — бюджеты, статистика, валюты, накопления.**
@@ -604,6 +624,7 @@ test/
 2. **НБКР.** Точный URL и формат XML ежедневных курсов (`https://www.nbkr.kg/XML/daily.xml` — по памяти, MUST подтвердить в браузере), кодировка, формат чисел (запятая?), номинал (`Nominal`: 1, 10, 100). Сохранить ответ как `test/fixtures/nbkr_daily.xml`. Результат — в §4.2.
 3. **`local_auth` на симуляторе.** Как ведёт себя `authenticate` без биометрии и при `Features → Face ID → Enrolled`; какие исключения (`NotAvailable`, `NotEnrolled`, `LockedOut`) и что показывать. Результат — в §8.3 «Lock».
 4. **`file_picker` и `share_plus`** на iOS: возвращают ли путь к JSON из «Файлов», нужны ли `UTType` в `Info.plist`. Результат — в §7.
+5. **Фоновое действие уведомления** (`onDidReceiveBackgroundNotificationResponse`) на iOS: выполняется ли без открытия приложения, доступна ли БД (drift в фоновом изоляте). Проверяется только на устройстве; до проверки код пишется по §6.6 с запасным вариантом. Результат — в §6.
 
 ---
 
