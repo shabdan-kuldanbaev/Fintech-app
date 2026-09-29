@@ -3,12 +3,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/providers.dart';
 import '../../../core/calendar.dart';
 import '../../accounts/domain/balances.dart';
+import '../../payments/domain/planning.dart';
 
-/// Сколько уже обещано платежами до конца расчётного месяца (§9.7).
-/// Этап 3 подставляет сюда наступления; до него — ноль.
-final homeToPayProvider = Provider<AsyncValue<(int, bool)>>(
-  (ref) => const AsyncData((0, false)),
-);
+/// Сколько уже обещано платежами до конца расчётного месяца (§9.7) и есть
+/// ли обязательства вообще.
+final homeToPayProvider = Provider<AsyncValue<(int, bool)>>((ref) {
+  final settings = ref.watch(settingsProvider).value;
+  final items = ref.watch(upcomingProvider).value;
+  final rules = ref.watch(rulesProvider).value;
+  final lastPaid = ref.watch(lastPaidProvider).value;
+  final converter = ref.watch(converterProvider).value;
+  final accounts = ref.watch(accountMapProvider).value;
+  final today = ref.watch(todayProvider);
+  if (settings == null || items == null || rules == null || lastPaid == null || converter == null || accounts == null) {
+    return const AsyncLoading();
+  }
+  final period = MonthPeriod.containing(today, settings.monthStartDay);
+  final sum = toPayUntil(
+    items,
+    periodEnd: period.end,
+    lastPaid: lastPaid,
+    converter: converter,
+    inOwnFunds: (id) {
+      final a = accounts[id];
+      return a != null && a.kind.isAsset && a.includeInTotal && !a.isArchived;
+    },
+  );
+  return AsyncData((sum, rules.isNotEmpty));
+});
 
 /// Сводка Главной: свои деньги, к оплате, «можно тратить до».
 final homeSummaryProvider = Provider<AsyncValue<HomeSummary>>((ref) {

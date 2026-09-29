@@ -64,6 +64,7 @@
   "deletedToast": "Удалено",
   "paidToast": "Оплачено · {label}",
   "skippedToast": "Пропущено · {label}",
+  "unpaidToast": "Оплата отменена · {label}",
   "changesSaved": "Сохранено",
   "txAmount": "Сумма",
   "txCategory": "Категория",

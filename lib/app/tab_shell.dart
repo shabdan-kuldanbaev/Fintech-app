@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'format.dart';
 import 'providers.dart';
 import 'router.dart';
+import 'startup.dart';
 import 'theme.dart';
 import 'widgets/glass.dart';
 
@@ -36,7 +37,10 @@ class _TabShellState extends ConsumerState<TabShell> {
     // Вернулись из фона — дата могла смениться: «сегодня» пересчитывается,
     // а за ним и всё, что от него зависит (§5.2).
     _lifecycle = AppLifecycleListener(
-      onResume: () => ref.invalidate(todayProvider),
+      onResume: () {
+        ref.invalidate(todayProvider);
+        unawaited(replanAllQuietly(ref.read));
+      },
     );
   }
 

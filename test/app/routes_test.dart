@@ -3,6 +3,7 @@
 import 'package:fintech/app/router.dart';
 import 'package:fintech/features/accounts/domain/account.dart';
 import 'package:fintech/features/categories/domain/category.dart';
+import 'package:fintech/features/payments/domain/rule.dart';
 import 'package:fintech/features/transactions/data/transaction_repository.dart';
 import 'package:fintech/features/transactions/domain/transaction.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +42,17 @@ final List<RouteCase> cases = [
   (name: 'backup', location: (h, d) async => Routes.backup),
   (name: 'new-loan', location: (h, d) async => Routes.newLoan),
   (name: 'new-credit-line', location: (h, d) async => Routes.newCreditLine),
+  (name: 'new-rule', location: (h, d) async => Routes.newRule(RuleKind.utility)),
+  (name: 'rule', location: (h, d) async => Routes.rule(d?.netflix ?? 'missing')),
+  (name: 'rule-edit', location: (h, d) async => d == null ? Routes.newRule(RuleKind.other) : Routes.editRule(d.electricity)),
+  (name: 'occurrence', location: (h, d) async => Routes.occurrence(d?.internetOccurrence ?? 'missing')),
+  (name: 'occurrence-credit', location: (h, d) async => Routes.occurrence(d?.creditLineOccurrence ?? 'missing')),
+  (name: 'transaction-paid', location: (h, d) async {
+    if (d == null) return Routes.txn('missing');
+    return Routes.txn(await h.rules.payAsExpected(d.internetOccurrence));
+  }),
+  (name: 'account-loan', location: (h, d) async => Routes.account(d?.loan ?? 'missing')),
+  (name: 'account-credit', location: (h, d) async => Routes.account(d?.creditLine ?? 'missing')),
 ];
 
 void main() {

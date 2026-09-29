@@ -259,11 +259,16 @@ class PillButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.tone = PillTone.primary,
+    this.icon,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final PillTone tone;
+
+  /// Значок перед подписью: узкая строка показывает «✓ 2 584,31» вместо
+  /// «Оплатить 2 584,31».
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -286,14 +291,20 @@ class PillButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s14),
             child: Center(
               widthFactor: 1,
-              child: Text(
-                label,
-                maxLines: 1,
-                softWrap: false,
-                style: Theme.of(context).textTheme.chipLabel.copyWith(
-                  color: fg,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (icon != null) ...[Icon(icon, size: 18, color: fg), const SizedBox(width: AppSpacing.s4)],
+                  Text(
+                    label,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: Theme.of(context).textTheme.chipLabel.copyWith(
+                      color: fg,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -383,7 +394,9 @@ class AppChip extends StatelessWidget {
   }
 }
 
-/// Сегмент из 2–3 пунктов (Expense / Income / Transfer).
+/// Сегмент из 2–3 пунктов (Expense / Income / Transfer). Подписи не
+/// переносятся: не хватает места — сегмент уменьшается целиком (§8.0);
+/// [expand] — во всю ширину, пункты поровну.
 class AppSegmented<T> extends StatelessWidget {
   const AppSegmented({
     super.key,
@@ -391,56 +404,62 @@ class AppSegmented<T> extends StatelessWidget {
     required this.labels,
     required this.selected,
     required this.onChanged,
+    this.expand = false,
   });
 
   final List<T> values;
   final List<String> labels;
   final T selected;
   final ValueChanged<T> onChanged;
+  final bool expand;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    return Container(
+    Widget item(int i) => Semantics(
+      selected: values[i] == selected,
+      button: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => onChanged(values[i]),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 36,
+          padding: EdgeInsets.symmetric(horizontal: expand ? AppSpacing.s8 : AppSpacing.s16),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: values[i] == selected ? scheme.primary : null,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              labels[i],
+              maxLines: 1,
+              softWrap: false,
+              style: text.labelLarge?.copyWith(
+                color: values[i] == selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final box = Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
         children: [
-          for (var i = 0; i < values.length; i++)
-            Semantics(
-              selected: values[i] == selected,
-              button: true,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => onChanged(values[i]),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  height: 36,
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s16),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: values[i] == selected ? scheme.primary : null,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: Text(
-                    labels[i],
-                    maxLines: 1,
-                    softWrap: false,
-                    style: text.labelLarge?.copyWith(
-                      color: values[i] == selected ? scheme.onPrimary : scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          for (var i = 0; i < values.length; i++) expand ? Expanded(child: item(i)) : item(i),
         ],
       ),
     );
+    return expand ? box : FittedBox(fit: BoxFit.scaleDown, child: box);
   }
 }
 
@@ -627,6 +646,8 @@ class EdgeToEdgeRow extends StatelessWidget {
 }
 
 /// Строка формы: подпись слева, значение справа, шеврон (§8.3 «Transaction»).
+/// Подпись и значение не влезают в строку («Следующее списание» на 320 pt) —
+/// значение уходит под подпись, а не обрезается до «3…».
 class ValueRow extends StatelessWidget {
   const ValueRow({
     super.key,
@@ -645,36 +666,85 @@ class ValueRow extends StatelessWidget {
   final Widget? leading;
   final Widget? trailing;
 
+  static const double _gap = AppSpacing.s12;
+
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
+    final labelStyle = text.bodyLarge?.copyWith(color: scheme.onSurfaceVariant);
+    final valueStyle = text.bodyLarge?.copyWith(fontWeight: FontWeight.w500, color: valueColor);
+    final Widget? end = trailing != null
+        ? Padding(padding: const EdgeInsets.only(left: AppSpacing.s8), child: trailing)
+        : onTap != null
+        ? Padding(
+            padding: const EdgeInsets.only(left: AppSpacing.s4),
+            child: Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant, size: 20),
+          )
+        : null;
     return InkWell(
       onTap: onTap,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 52),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s18, vertical: AppSpacing.s10),
-          child: Row(
-            children: [
-              if (leading != null) ...[leading!, const SizedBox(width: AppSpacing.s12)],
-              Text(label, style: text.bodyLarge?.copyWith(color: scheme.onSurfaceVariant)),
-              const SizedBox(width: AppSpacing.s12),
-              Expanded(
-                child: Text(
-                  value,
-                  textAlign: TextAlign.end,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final scaler = MediaQuery.textScalerOf(context);
+              double width(String s, TextStyle? style) {
+                final painter = TextPainter(
+                  text: TextSpan(text: s, style: style),
+                  textDirection: Directionality.of(context),
+                  textScaler: scaler,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: text.bodyLarge?.copyWith(fontWeight: FontWeight.w500, color: valueColor),
-                ),
-              ),
-              if (trailing != null) ...[const SizedBox(width: AppSpacing.s8), trailing!]
-              else if (onTap != null) ...[
-                const SizedBox(width: AppSpacing.s4),
-                Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant, size: 20),
-              ],
-            ],
+                )..layout();
+                final w = painter.width;
+                painter.dispose();
+                return w;
+              }
+              final extras = (leading == null ? 0 : 44) + (end == null ? 0 : 28);
+              final fits = value.isEmpty ||
+                  width(label, labelStyle) + _gap + width(value, valueStyle) + extras <= constraints.maxWidth;
+              if (fits) {
+                return Row(
+                  children: [
+                    if (leading != null) ...[leading!, const SizedBox(width: AppSpacing.s12)],
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: (constraints.maxWidth - extras) * 0.75),
+                      child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: labelStyle),
+                    ),
+                    const SizedBox(width: _gap),
+                    Expanded(
+                      child: Text(
+                        value,
+                        textAlign: TextAlign.end,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: valueStyle,
+                      ),
+                    ),
+                    ?end,
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  if (leading != null) ...[leading!, const SizedBox(width: AppSpacing.s12)],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+                        const SizedBox(height: AppSpacing.s2),
+                        Text(value, maxLines: 2, overflow: TextOverflow.ellipsis, style: valueStyle),
+                      ],
+                    ),
+                  ),
+                  ?end,
+                ],
+              );
+            },
           ),
         ),
       ),

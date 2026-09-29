@@ -13,9 +13,12 @@ import 'widgets/startup_failure_screen.dart';
 /// Корень дерева: `runApp` вызывается сразу, инициализация идёт под ним, и
 /// её отказ — состояние экрана, а не отсутствие приложения (Jattap).
 class StartupGate extends StatefulWidget {
-  const StartupGate({super.key, this.startUp = runStartup});
+  const StartupGate({super.key, this.startUp = runStartup, this.onReady = completeStartup});
 
   final Future<StartupResult> Function() startUp;
+
+  /// Отложенная работа после первого удачного кадра.
+  final void Function(StartupSuccess success) onReady;
 
   @override
   State<StartupGate> createState() => _StartupGateState();
@@ -39,6 +42,7 @@ class _StartupGateState extends State<StartupGate> {
       return;
     }
     setState(() => _result = result);
+    if (result is StartupSuccess) widget.onReady(result);
   }
 
   void _retry() {

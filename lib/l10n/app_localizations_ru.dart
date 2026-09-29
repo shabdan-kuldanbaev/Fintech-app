@@ -224,6 +224,11 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String unpaidToast(String label) {
+    return 'Оплата отменена · $label';
+  }
+
+  @override
   String get changesSaved => 'Сохранено';
 
   @override

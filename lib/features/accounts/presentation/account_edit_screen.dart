@@ -111,6 +111,10 @@ class _AccountEditScreenState extends ConsumerState<AccountEditScreen> {
         await repo.create(input);
       } else {
         await repo.update(widget.id!, input);
+        if (_kind.isLiability) {
+          await ref.read(obligationRepositoryProvider).syncRule(widget.id!);
+          await ref.read(occurrencePlannerProvider).replan();
+        }
         final target = amount(_balance);
         if (!_kind.isLiability && target != null && currentBalance != null && target != currentBalance) {
           if (await repo.hasTransactions(widget.id!)) {

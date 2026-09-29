@@ -151,7 +151,8 @@ class _AccountBody extends ConsumerWidget {
         [
           (l.accountLimit, m(a.creditLimit ?? 0)),
           (l.accountAvailable, m(availableOf(a, balance))),
-          if (a.dueDay != null) (l.accountDueDay, l.dayOfMonth(a.dueDay!)),
+          if (info?.next != null) (l.accountNext, context.day(info!.next!))
+          else if (a.dueDay != null) (l.accountDueDay, l.dayOfMonth(a.dueDay!)),
         ],
       ),
       AccountKind.loan => (

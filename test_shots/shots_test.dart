@@ -2,6 +2,7 @@
 // Не входит в `flutter test` (каталог вне test/): пишет PNG в build/shots.
 import 'package:fintech/app/router.dart';
 import 'package:fintech/features/accounts/domain/account.dart';
+import 'package:fintech/features/payments/domain/rule.dart';
 import 'package:fintech/features/transactions/domain/transaction.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,6 +25,16 @@ final List<Shot> shots = [
   (name: 'account-savings', location: (d) => Routes.account(d.vacation), keyboard: 0, emptyDb: false),
   (name: 'account-new', location: (d) => Routes.newAccount(AccountKind.card), keyboard: 0, emptyDb: false),
   (name: 'categories', location: (d) => Routes.categories, keyboard: 0, emptyDb: false),
+  (name: 'payments', location: (d) => Routes.payments, keyboard: 0, emptyDb: false),
+  (name: 'rule-new', location: (d) => Routes.newRule(RuleKind.utility), keyboard: 0, emptyDb: false),
+  (name: 'rule-netflix', location: (d) => Routes.rule(d.netflix), keyboard: 0, emptyDb: false),
+  (name: 'rule-edit', location: (d) => Routes.editRule(d.netflix), keyboard: 0, emptyDb: false),
+  (name: 'occurrence-internet', location: (d) => Routes.occurrence(d.internetOccurrence), keyboard: 0, emptyDb: false),
+  (name: 'occurrence-visa', location: (d) => Routes.occurrence(d.creditLineOccurrence), keyboard: 0, emptyDb: false),
+  (name: 'account-loan', location: (d) => Routes.account(d.loan), keyboard: 0, emptyDb: false),
+  (name: 'account-credit', location: (d) => Routes.account(d.creditLine), keyboard: 0, emptyDb: false),
+  (name: 'loan-new', location: (d) => Routes.newLoan, keyboard: 0, emptyDb: false),
+  (name: 'credit-line-new', location: (d) => Routes.newCreditLine, keyboard: 0, emptyDb: false),
 ];
 
 void main() {

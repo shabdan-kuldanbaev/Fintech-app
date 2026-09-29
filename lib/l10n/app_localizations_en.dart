@@ -224,6 +224,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String unpaidToast(String label) {
+    return 'Payment undone · $label';
+  }
+
+  @override
   String get changesSaved => 'Saved';
 
   @override

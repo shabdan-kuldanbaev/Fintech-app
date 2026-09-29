@@ -178,6 +178,19 @@ void main() {
     expect(File('pubspec.yaml').readAsStringSync(), isNot(contains('cupertino_native')));
   });
 
+  /// Тап и действие уведомления iOS отдаёт делегату центра уведомлений —
+  /// назначить его нужно до конца запуска (перенос из Jattap, 2026-09-23).
+  /// Фоновое действие «Paid» (§6.6) идёт в своём движке: без колбэка
+  /// регистрации плагинов у него нет ни базы, ни путей.
+  test('§6: AppDelegate sets the notification delegate and the background registrant', () {
+    final code = File('ios/Runner/AppDelegate.swift')
+        .readAsLinesSync()
+        .where((line) => !line.trimLeft().startsWith('//'))
+        .join('\n');
+    expect(code, contains('UNUserNotificationCenter.current().delegate = self'));
+    expect(code, contains('FlutterLocalNotificationsPlugin.setPluginRegistrantCallback'));
+  });
+
   test('I17: Clipboard.getData is never called', () {
     expect(offenders(anywhere, (c) => c.contains('Clipboard.getData')), isEmpty);
   });

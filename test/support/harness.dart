@@ -7,6 +7,11 @@ import 'package:fintech/features/accounts/domain/account.dart';
 import 'package:fintech/features/categories/data/category_repository.dart';
 import 'package:fintech/features/categories/domain/category.dart';
 import 'package:fintech/features/currencies/data/rates_repository.dart';
+import 'package:fintech/features/payments/data/obligation_repository.dart';
+import 'package:fintech/features/payments/data/occurrence_planner.dart';
+import 'package:fintech/features/payments/data/rule_repository.dart';
+import 'package:fintech/features/payments/domain/rule.dart';
+import 'package:fintech/features/payments/domain/schedule.dart';
 import 'package:fintech/features/settings/data/bootstrap.dart';
 import 'package:fintech/features/settings/data/settings_repository.dart';
 import 'package:fintech/features/transactions/data/transaction_repository.dart';
@@ -21,6 +26,9 @@ class Harness {
       categories = CategoryRepository(db, clock),
       rates = RatesRepository(db, clock) {
     transactions = TransactionRepository(db, clock, rates);
+    rules = RuleRepository(db, clock, settings, transactions, rates);
+    planner = OccurrencePlanner(db, clock, rules, accounts, rates);
+    obligations = ObligationRepository(db, clock, accounts, rules);
   }
 
   static Future<Harness> create({String country = 'KG'}) async {
@@ -37,6 +45,45 @@ class Harness {
   final CategoryRepository categories;
   final RatesRepository rates;
   late final TransactionRepository transactions;
+  late final RuleRepository rules;
+  late final OccurrencePlanner planner;
+  late final ObligationRepository obligations;
+
+  /// Подписка/коммуналка/прочее с разумными умолчаниями.
+  Future<String> rule({
+    String name = 'Netflix',
+    RuleKind kind = RuleKind.subscription,
+    int? amount = 99900,
+    String currency = 'KGS',
+    String? accountId,
+    String category = 'subscriptions',
+    Frequency frequency = Frequency.monthly,
+    LocalDate? start,
+    LocalDate? end,
+    int interval = 1,
+    bool autoPay = false,
+    List<int> remind = const [3, 0],
+    int? remindMinutes,
+  }) async => rules.insert(
+    RuleInput(
+      name: name,
+      kind: kind,
+      amount: amount,
+      currency: currency,
+      accountId: accountId,
+      categoryId: await categoryId(category),
+      frequency: frequency,
+      startDate: start ?? today.addDays(3),
+      endDate: end,
+      interval: interval,
+      autoPay: autoPay,
+      remindDaysBefore: remind,
+      remindMinutes: remindMinutes,
+    ),
+  );
+
+  Future<List<Occurrence>> occurrencesOf(String ruleId) =>
+      rules.watchOfRule(ruleId).first;
 
   LocalDate get today => LocalDate.today(clock);
 

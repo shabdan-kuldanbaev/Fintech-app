@@ -482,6 +482,12 @@ abstract class AppLocalizations {
   /// **'Skipped · {label}'**
   String skippedToast(String label);
 
+  /// No description provided for @unpaidToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment undone · {label}'**
+  String unpaidToast(String label);
+
   /// No description provided for @changesSaved.
   ///
   /// In en, this message translates to:

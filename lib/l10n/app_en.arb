@@ -127,6 +127,14 @@
       }
     }
   },
+  "unpaidToast": "Payment undone · {label}",
+  "@unpaidToast": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
   "changesSaved": "Saved",
   "txAmount": "Amount",
   "txCategory": "Category",
