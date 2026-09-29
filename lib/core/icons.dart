@@ -44,6 +44,9 @@ const Map<String, IconData> appIcons = {
   'freelance': Icons.laptop_mac_outlined,
   'interest': Icons.percent_rounded,
   'adjustment': Icons.tune_rounded,
+  'transfer': Icons.swap_horiz_rounded,
+  'check': Icons.check_rounded,
+  'schedule': Icons.schedule_rounded,
   'other': Icons.more_horiz_rounded,
 };
 

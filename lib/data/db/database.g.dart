@@ -3,7 +3,8 @@
 part of 'database.dart';
 
 // ignore_for_file: type=lint
-class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
+class $AccountsTable extends Accounts
+    with TableInfo<$AccountsTable, AccountRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -318,7 +319,7 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
   static const String $name = 'accounts';
   @override
   VerificationContext validateIntegrity(
-    Insertable<Account> instance, {
+    Insertable<AccountRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -513,9 +514,9 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  Account map(Map<String, dynamic> data, {String? tablePrefix}) {
+  AccountRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Account(
+    return AccountRow(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -625,7 +626,7 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
   }
 }
 
-class Account extends DataClass implements Insertable<Account> {
+class AccountRow extends DataClass implements Insertable<AccountRow> {
   final String id;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -655,7 +656,7 @@ class Account extends DataClass implements Insertable<Account> {
   final int sortOrder;
   final bool includeInTotal;
   final bool isArchived;
-  const Account({
+  const AccountRow({
     required this.id,
     required this.createdAt,
     required this.updatedAt,
@@ -795,12 +796,12 @@ class Account extends DataClass implements Insertable<Account> {
     );
   }
 
-  factory Account.fromJson(
+  factory AccountRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Account(
+    return AccountRow(
       id: serializer.fromJson<String>(json['id']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -860,7 +861,7 @@ class Account extends DataClass implements Insertable<Account> {
     };
   }
 
-  Account copyWith({
+  AccountRow copyWith({
     String? id,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -886,7 +887,7 @@ class Account extends DataClass implements Insertable<Account> {
     int? sortOrder,
     bool? includeInTotal,
     bool? isArchived,
-  }) => Account(
+  }) => AccountRow(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -917,8 +918,8 @@ class Account extends DataClass implements Insertable<Account> {
     includeInTotal: includeInTotal ?? this.includeInTotal,
     isArchived: isArchived ?? this.isArchived,
   );
-  Account copyWithCompanion(AccountsCompanion data) {
-    return Account(
+  AccountRow copyWithCompanion(AccountsCompanion data) {
+    return AccountRow(
       id: data.id.present ? data.id.value : this.id,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -973,7 +974,7 @@ class Account extends DataClass implements Insertable<Account> {
 
   @override
   String toString() {
-    return (StringBuffer('Account(')
+    return (StringBuffer('AccountRow(')
           ..write('id: $id, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -1034,7 +1035,7 @@ class Account extends DataClass implements Insertable<Account> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Account &&
+      (other is AccountRow &&
           other.id == this.id &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -1062,7 +1063,7 @@ class Account extends DataClass implements Insertable<Account> {
           other.isArchived == this.isArchived);
 }
 
-class AccountsCompanion extends UpdateCompanion<Account> {
+class AccountsCompanion extends UpdateCompanion<AccountRow> {
   final Value<String> id;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -1152,7 +1153,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
        currency = Value(currency),
        iconKey = Value(iconKey),
        colorKey = Value(colorKey);
-  static Insertable<Account> custom({
+  static Insertable<AccountRow> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -1387,7 +1388,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
 }
 
 class $CategoriesTable extends Categories
-    with TableInfo<$CategoriesTable, Category> {
+    with TableInfo<$CategoriesTable, CategoryRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -1543,7 +1544,7 @@ class $CategoriesTable extends Categories
   static const String $name = 'categories';
   @override
   VerificationContext validateIntegrity(
-    Insertable<Category> instance, {
+    Insertable<CategoryRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -1638,9 +1639,9 @@ class $CategoriesTable extends Categories
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  Category map(Map<String, dynamic> data, {String? tablePrefix}) {
+  CategoryRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Category(
+    return CategoryRow(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -1698,7 +1699,7 @@ class $CategoriesTable extends Categories
   }
 }
 
-class Category extends DataClass implements Insertable<Category> {
+class CategoryRow extends DataClass implements Insertable<CategoryRow> {
   final String id;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -1713,7 +1714,7 @@ class Category extends DataClass implements Insertable<Category> {
   final int sortOrder;
   final bool isSystem;
   final String? lastAccountId;
-  const Category({
+  const CategoryRow({
     required this.id,
     required this.createdAt,
     required this.updatedAt,
@@ -1774,12 +1775,12 @@ class Category extends DataClass implements Insertable<Category> {
     );
   }
 
-  factory Category.fromJson(
+  factory CategoryRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Category(
+    return CategoryRow(
       id: serializer.fromJson<String>(json['id']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -1813,7 +1814,7 @@ class Category extends DataClass implements Insertable<Category> {
     };
   }
 
-  Category copyWith({
+  CategoryRow copyWith({
     String? id,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -1826,7 +1827,7 @@ class Category extends DataClass implements Insertable<Category> {
     int? sortOrder,
     bool? isSystem,
     Value<String?> lastAccountId = const Value.absent(),
-  }) => Category(
+  }) => CategoryRow(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -1842,8 +1843,8 @@ class Category extends DataClass implements Insertable<Category> {
         ? lastAccountId.value
         : this.lastAccountId,
   );
-  Category copyWithCompanion(CategoriesCompanion data) {
-    return Category(
+  CategoryRow copyWithCompanion(CategoriesCompanion data) {
+    return CategoryRow(
       id: data.id.present ? data.id.value : this.id,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -1863,7 +1864,7 @@ class Category extends DataClass implements Insertable<Category> {
 
   @override
   String toString() {
-    return (StringBuffer('Category(')
+    return (StringBuffer('CategoryRow(')
           ..write('id: $id, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -1898,7 +1899,7 @@ class Category extends DataClass implements Insertable<Category> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Category &&
+      (other is CategoryRow &&
           other.id == this.id &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -1913,7 +1914,7 @@ class Category extends DataClass implements Insertable<Category> {
           other.lastAccountId == this.lastAccountId);
 }
 
-class CategoriesCompanion extends UpdateCompanion<Category> {
+class CategoriesCompanion extends UpdateCompanion<CategoryRow> {
   final Value<String> id;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -1962,7 +1963,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
        kind = Value(kind),
        iconKey = Value(iconKey),
        colorKey = Value(colorKey);
-  static Insertable<Category> custom({
+  static Insertable<CategoryRow> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -2093,7 +2094,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
 }
 
 class $TransactionsTable extends Transactions
-    with TableInfo<$TransactionsTable, Transaction> {
+    with TableInfo<$TransactionsTable, TransactionRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -2287,7 +2288,7 @@ class $TransactionsTable extends Transactions
   static const String $name = 'transactions';
   @override
   VerificationContext validateIntegrity(
-    Insertable<Transaction> instance, {
+    Insertable<TransactionRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -2412,9 +2413,9 @@ class $TransactionsTable extends Transactions
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  Transaction map(Map<String, dynamic> data, {String? tablePrefix}) {
+  TransactionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Transaction(
+    return TransactionRow(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -2484,7 +2485,7 @@ class $TransactionsTable extends Transactions
   }
 }
 
-class Transaction extends DataClass implements Insertable<Transaction> {
+class TransactionRow extends DataClass implements Insertable<TransactionRow> {
   final String id;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -2506,7 +2507,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   /// YYYY-MM-DD, локальный календарь (I6).
   final String date;
   final String? note;
-  const Transaction({
+  const TransactionRow({
     required this.id,
     required this.createdAt,
     required this.updatedAt,
@@ -2586,12 +2587,12 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     );
   }
 
-  factory Transaction.fromJson(
+  factory TransactionRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Transaction(
+    return TransactionRow(
       id: serializer.fromJson<String>(json['id']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -2631,7 +2632,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     };
   }
 
-  Transaction copyWith({
+  TransactionRow copyWith({
     String? id,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -2647,7 +2648,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     Value<String?> occurrenceId = const Value.absent(),
     String? date,
     Value<String?> note = const Value.absent(),
-  }) => Transaction(
+  }) => TransactionRow(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -2668,8 +2669,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     date: date ?? this.date,
     note: note.present ? note.value : this.note,
   );
-  Transaction copyWithCompanion(TransactionsCompanion data) {
-    return Transaction(
+  TransactionRow copyWithCompanion(TransactionsCompanion data) {
+    return TransactionRow(
       id: data.id.present ? data.id.value : this.id,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -2700,7 +2701,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
 
   @override
   String toString() {
-    return (StringBuffer('Transaction(')
+    return (StringBuffer('TransactionRow(')
           ..write('id: $id, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -2741,7 +2742,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Transaction &&
+      (other is TransactionRow &&
           other.id == this.id &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -2759,7 +2760,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.note == this.note);
 }
 
-class TransactionsCompanion extends UpdateCompanion<Transaction> {
+class TransactionsCompanion extends UpdateCompanion<TransactionRow> {
   final Value<String> id;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -2820,7 +2821,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
        currency = Value(currency),
        baseAmount = Value(baseAmount),
        date = Value(date);
-  static Insertable<Transaction> custom({
+  static Insertable<TransactionRow> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -2975,7 +2976,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
 }
 
 class $RecurringRulesTable extends RecurringRules
-    with TableInfo<$RecurringRulesTable, RecurringRule> {
+    with TableInfo<$RecurringRulesTable, RuleRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -3272,7 +3273,7 @@ class $RecurringRulesTable extends RecurringRules
   static const String $name = 'recurring_rules';
   @override
   VerificationContext validateIntegrity(
-    Insertable<RecurringRule> instance, {
+    Insertable<RuleRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -3458,9 +3459,9 @@ class $RecurringRulesTable extends RecurringRules
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  RecurringRule map(Map<String, dynamic> data, {String? tablePrefix}) {
+  RuleRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return RecurringRule(
+    return RuleRow(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -3562,7 +3563,7 @@ class $RecurringRulesTable extends RecurringRules
   }
 }
 
-class RecurringRule extends DataClass implements Insertable<RecurringRule> {
+class RuleRow extends DataClass implements Insertable<RuleRow> {
   final String id;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -3594,7 +3595,7 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
   final String? pausedUntil;
   final String iconKey;
   final String colorKey;
-  const RecurringRule({
+  const RuleRow({
     required this.id,
     required this.createdAt,
     required this.updatedAt,
@@ -3712,12 +3713,12 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
     );
   }
 
-  factory RecurringRule.fromJson(
+  factory RuleRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return RecurringRule(
+    return RuleRow(
       id: serializer.fromJson<String>(json['id']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -3773,7 +3774,7 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
     };
   }
 
-  RecurringRule copyWith({
+  RuleRow copyWith({
     String? id,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -3797,7 +3798,7 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
     Value<String?> pausedUntil = const Value.absent(),
     String? iconKey,
     String? colorKey,
-  }) => RecurringRule(
+  }) => RuleRow(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -3826,8 +3827,8 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
     iconKey: iconKey ?? this.iconKey,
     colorKey: colorKey ?? this.colorKey,
   );
-  RecurringRule copyWithCompanion(RecurringRulesCompanion data) {
-    return RecurringRule(
+  RuleRow copyWithCompanion(RecurringRulesCompanion data) {
+    return RuleRow(
       id: data.id.present ? data.id.value : this.id,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -3870,7 +3871,7 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
 
   @override
   String toString() {
-    return (StringBuffer('RecurringRule(')
+    return (StringBuffer('RuleRow(')
           ..write('id: $id, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -3927,7 +3928,7 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is RecurringRule &&
+      (other is RuleRow &&
           other.id == this.id &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -3953,7 +3954,7 @@ class RecurringRule extends DataClass implements Insertable<RecurringRule> {
           other.colorKey == this.colorKey);
 }
 
-class RecurringRulesCompanion extends UpdateCompanion<RecurringRule> {
+class RecurringRulesCompanion extends UpdateCompanion<RuleRow> {
   final Value<String> id;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -4040,7 +4041,7 @@ class RecurringRulesCompanion extends UpdateCompanion<RecurringRule> {
        notificationBaseId = Value(notificationBaseId),
        iconKey = Value(iconKey),
        colorKey = Value(colorKey);
-  static Insertable<RecurringRule> custom({
+  static Insertable<RuleRow> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -4260,7 +4261,7 @@ class RecurringRulesCompanion extends UpdateCompanion<RecurringRule> {
 }
 
 class $OccurrencesTable extends Occurrences
-    with TableInfo<$OccurrencesTable, Occurrence> {
+    with TableInfo<$OccurrencesTable, OccurrenceRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -4416,7 +4417,7 @@ class $OccurrencesTable extends Occurrences
   static const String $name = 'occurrences';
   @override
   VerificationContext validateIntegrity(
-    Insertable<Occurrence> instance, {
+    Insertable<OccurrenceRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -4516,9 +4517,9 @@ class $OccurrencesTable extends Occurrences
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  Occurrence map(Map<String, dynamic> data, {String? tablePrefix}) {
+  OccurrenceRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Occurrence(
+    return OccurrenceRow(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -4576,7 +4577,7 @@ class $OccurrencesTable extends Occurrences
   }
 }
 
-class Occurrence extends DataClass implements Insertable<Occurrence> {
+class OccurrenceRow extends DataClass implements Insertable<OccurrenceRow> {
   final String id;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -4591,7 +4592,7 @@ class Occurrence extends DataClass implements Insertable<Occurrence> {
   final String status;
   final String? transactionId;
   final DateTime? paidAt;
-  const Occurrence({
+  const OccurrenceRow({
     required this.id,
     required this.createdAt,
     required this.updatedAt,
@@ -4656,12 +4657,12 @@ class Occurrence extends DataClass implements Insertable<Occurrence> {
     );
   }
 
-  factory Occurrence.fromJson(
+  factory OccurrenceRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Occurrence(
+    return OccurrenceRow(
       id: serializer.fromJson<String>(json['id']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -4695,7 +4696,7 @@ class Occurrence extends DataClass implements Insertable<Occurrence> {
     };
   }
 
-  Occurrence copyWith({
+  OccurrenceRow copyWith({
     String? id,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -4708,7 +4709,7 @@ class Occurrence extends DataClass implements Insertable<Occurrence> {
     String? status,
     Value<String?> transactionId = const Value.absent(),
     Value<DateTime?> paidAt = const Value.absent(),
-  }) => Occurrence(
+  }) => OccurrenceRow(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -4726,8 +4727,8 @@ class Occurrence extends DataClass implements Insertable<Occurrence> {
         : this.transactionId,
     paidAt: paidAt.present ? paidAt.value : this.paidAt,
   );
-  Occurrence copyWithCompanion(OccurrencesCompanion data) {
-    return Occurrence(
+  OccurrenceRow copyWithCompanion(OccurrencesCompanion data) {
+    return OccurrenceRow(
       id: data.id.present ? data.id.value : this.id,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -4749,7 +4750,7 @@ class Occurrence extends DataClass implements Insertable<Occurrence> {
 
   @override
   String toString() {
-    return (StringBuffer('Occurrence(')
+    return (StringBuffer('OccurrenceRow(')
           ..write('id: $id, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -4784,7 +4785,7 @@ class Occurrence extends DataClass implements Insertable<Occurrence> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Occurrence &&
+      (other is OccurrenceRow &&
           other.id == this.id &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -4799,7 +4800,7 @@ class Occurrence extends DataClass implements Insertable<Occurrence> {
           other.paidAt == this.paidAt);
 }
 
-class OccurrencesCompanion extends UpdateCompanion<Occurrence> {
+class OccurrencesCompanion extends UpdateCompanion<OccurrenceRow> {
   final Value<String> id;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -4849,7 +4850,7 @@ class OccurrencesCompanion extends UpdateCompanion<Occurrence> {
        seq = Value(seq),
        dueDate = Value(dueDate),
        currency = Value(currency);
-  static Insertable<Occurrence> custom({
+  static Insertable<OccurrenceRow> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -4979,7 +4980,7 @@ class OccurrencesCompanion extends UpdateCompanion<Occurrence> {
   }
 }
 
-class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
+class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, BudgetRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -5077,7 +5078,7 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
   static const String $name = 'budgets';
   @override
   VerificationContext validateIntegrity(
-    Insertable<Budget> instance, {
+    Insertable<BudgetRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -5137,9 +5138,9 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  Budget map(Map<String, dynamic> data, {String? tablePrefix}) {
+  BudgetRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Budget(
+    return BudgetRow(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -5177,7 +5178,7 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
   }
 }
 
-class Budget extends DataClass implements Insertable<Budget> {
+class BudgetRow extends DataClass implements Insertable<BudgetRow> {
   final String id;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -5187,7 +5188,7 @@ class Budget extends DataClass implements Insertable<Budget> {
   /// YYYY-MM
   final String fromMonth;
   final int amount;
-  const Budget({
+  const BudgetRow({
     required this.id,
     required this.createdAt,
     required this.updatedAt,
@@ -5229,12 +5230,12 @@ class Budget extends DataClass implements Insertable<Budget> {
     );
   }
 
-  factory Budget.fromJson(
+  factory BudgetRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Budget(
+    return BudgetRow(
       id: serializer.fromJson<String>(json['id']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -5258,7 +5259,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     };
   }
 
-  Budget copyWith({
+  BudgetRow copyWith({
     String? id,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -5266,7 +5267,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     Value<String?> categoryId = const Value.absent(),
     String? fromMonth,
     int? amount,
-  }) => Budget(
+  }) => BudgetRow(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -5275,8 +5276,8 @@ class Budget extends DataClass implements Insertable<Budget> {
     fromMonth: fromMonth ?? this.fromMonth,
     amount: amount ?? this.amount,
   );
-  Budget copyWithCompanion(BudgetsCompanion data) {
-    return Budget(
+  BudgetRow copyWithCompanion(BudgetsCompanion data) {
+    return BudgetRow(
       id: data.id.present ? data.id.value : this.id,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -5291,7 +5292,7 @@ class Budget extends DataClass implements Insertable<Budget> {
 
   @override
   String toString() {
-    return (StringBuffer('Budget(')
+    return (StringBuffer('BudgetRow(')
           ..write('id: $id, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -5316,7 +5317,7 @@ class Budget extends DataClass implements Insertable<Budget> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Budget &&
+      (other is BudgetRow &&
           other.id == this.id &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -5326,7 +5327,7 @@ class Budget extends DataClass implements Insertable<Budget> {
           other.amount == this.amount);
 }
 
-class BudgetsCompanion extends UpdateCompanion<Budget> {
+class BudgetsCompanion extends UpdateCompanion<BudgetRow> {
   final Value<String> id;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -5359,7 +5360,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
        updatedAt = Value(updatedAt),
        fromMonth = Value(fromMonth),
        amount = Value(amount);
-  static Insertable<Budget> custom({
+  static Insertable<BudgetRow> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,

@@ -20,7 +20,7 @@ cd "$(git rev-parse --show-toplevel)" || exit 1
 # Только то, что видят `dart analyze` и `flutter test`. Документация и ios/
 # прогоном не проверяются, и требовать прогон ради них — приучать его обходить.
 PATHS=()
-for p in lib test integration_test packages tool pubspec.yaml pubspec.lock \
+for p in lib test test_shots integration_test packages tool assets pubspec.yaml pubspec.lock \
          analysis_options.yaml; do
   [[ -e $p ]] && PATHS+=($p)
 done

@@ -16,7 +16,7 @@
 set -u
 HERE=${0:A:h}
 cd "$(git rev-parse --show-toplevel)" || exit 1
-ANALYZE=${VERIFY_ANALYZE:-dart analyze lib test}
+ANALYZE=${VERIFY_ANALYZE:-dart analyze lib test test_shots}
 TEST=${VERIFY_TEST:-flutter test}
 STAMP=build/verify-stamp
 LOG=build/verify.log

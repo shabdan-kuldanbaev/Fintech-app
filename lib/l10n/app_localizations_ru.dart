@@ -345,7 +345,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String accountByDate(String date) {
-    return 'к $date';
+    return 'до $date';
   }
 
   @override

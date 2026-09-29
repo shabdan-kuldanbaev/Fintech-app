@@ -11,6 +11,10 @@ import 'package:flutter/material.dart';
 abstract final class AppTheme {
   static const String fontFamily = 'Outfit';
 
+  /// В Outfit нет кириллицы: русские буквы берутся из Onest — геометрический
+  /// гротеск того же характера (OFL). Латиница и цифры остаются в Outfit.
+  static const List<String> fontFallback = ['Onest'];
+
   // --- базовые тона
   static const Color _white = Color(0xFFFFFFFF);
 
@@ -151,10 +155,12 @@ abstract final class AppTheme {
       colorScheme: scheme,
       useMaterial3: true,
       fontFamily: fontFamily,
+      fontFamilyFallback: fontFallback,
     );
 
     const buttonText = TextStyle(
       fontFamily: fontFamily,
+      fontFamilyFallback: fontFallback,
       fontSize: 17,
       fontWeight: FontWeight.w600,
     );
@@ -192,6 +198,7 @@ abstract final class AppTheme {
         scrolledUnderElevation: 0,
         titleTextStyle: TextStyle(
           fontFamily: fontFamily,
+      fontFamilyFallback: fontFallback,
           fontSize: 17,
           fontWeight: FontWeight.w600,
           color: ink,
@@ -232,6 +239,7 @@ abstract final class AppTheme {
           shape: const StadiumBorder(),
           textStyle: const TextStyle(
             fontFamily: fontFamily,
+      fontFamilyFallback: fontFallback,
             fontSize: 15,
             fontWeight: FontWeight.w500,
           ),
@@ -251,18 +259,21 @@ abstract final class AppTheme {
         ),
         labelStyle: TextStyle(
           fontFamily: fontFamily,
+      fontFamilyFallback: fontFallback,
           fontSize: 15,
           fontWeight: FontWeight.w500,
           color: muted,
         ),
         floatingLabelStyle: TextStyle(
           fontFamily: fontFamily,
+      fontFamilyFallback: fontFallback,
           fontSize: 13,
           fontWeight: FontWeight.w600,
           color: muted,
         ),
         hintStyle: TextStyle(
           fontFamily: fontFamily,
+      fontFamilyFallback: fontFallback,
           fontSize: 17,
           color: muted,
         ),
@@ -293,12 +304,14 @@ abstract final class AppTheme {
         ),
         titleTextStyle: TextStyle(
           fontFamily: fontFamily,
+      fontFamilyFallback: fontFallback,
           fontSize: 22,
           fontWeight: FontWeight.w600,
           color: ink,
         ),
         contentTextStyle: TextStyle(
           fontFamily: fontFamily,
+      fontFamilyFallback: fontFallback,
           fontSize: 15,
           height: 1.4,
           color: muted,
@@ -367,6 +380,7 @@ abstract final class AppTheme {
       Color? color,
     }) => TextStyle(
       fontFamily: fontFamily,
+      fontFamilyFallback: fontFallback,
       fontSize: size,
       fontWeight: weight,
       height: height,

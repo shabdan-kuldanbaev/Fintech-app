@@ -100,7 +100,7 @@
   "accountAvailableOf": "доступно {available} из {limit}",
   "accountLoanProgress": "оплачено {paid} из {total} · {payment} в месяц",
   "accountGoalOf": "из {target} · {percent}%",
-  "accountByDate": "к {date}",
+  "accountByDate": "до {date}",
   "accountDueDate": "до {date}",
   "accountNextDate": "следующий {date}",
   "accountDebtTotal": "долг {amount}",

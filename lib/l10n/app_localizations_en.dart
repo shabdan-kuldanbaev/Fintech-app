@@ -1005,7 +1005,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get utilities => 'Utilities';
 
   @override
-  String get phone => 'Phone & internet';
+  String get phone => 'Phone';
 
   @override
   String get subscriptions => 'Subscriptions';

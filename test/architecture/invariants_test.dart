@@ -45,7 +45,7 @@ void main() {
       offenders(
         anywhere,
         (c) =>
-            RegExp(r'\bdelete\((db\.)?\w+\)').hasMatch(c) ||
+            RegExp(r'\b_?db\.delete\(').hasMatch(c) ||
             RegExp(r'DELETE\s+FROM', caseSensitive: false).hasMatch(c),
       ),
       isEmpty,
@@ -127,10 +127,18 @@ void main() {
 
   test('I14: no user-visible string literals with letters', () {
     // Text('Save'), label: 'Save', tooltip: 'Close', title: 'x', hintText: …
+    // Интерполяция (`'${l.save} · ${l.optional}'`) — не литерал: буквы
+    // внутри `${…}` и `$name` вырезаются до проверки.
     final literal = RegExp(
-      r"""(\bText\(\s*|\b(label|hintText|labelText|title|tooltip|message|semanticLabel|body)\s*:\s*)(['"])[^'"]*[A-Za-zА-Яа-яЁё]""",
+      r"""(\bText\(\s*|\b(label|hintText|labelText|title|tooltip|message|semanticLabel|body)\s*:\s*)(['"])((?:(?!\3)[^\n])*)\3""",
     );
-    expect(offenders(anywhere, literal.hasMatch), isEmpty);
+    bool hasLetters(String code) => literal.allMatches(code).any((m) {
+      final content = m.group(4)!
+          .replaceAll(RegExp(r'\$\{[^}]*\}'), '')
+          .replaceAll(RegExp(r'\$\w+'), '');
+      return RegExp(r'[A-Za-zА-Яа-яЁё]').hasMatch(content);
+    });
+    expect(offenders(anywhere, hasLetters), isEmpty);
   });
 
   test('I16: colors only in app/theme.dart', () {

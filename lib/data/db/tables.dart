@@ -11,6 +11,7 @@ mixin SyncableTable on Table {
 }
 
 /// Счёт. Баланс не хранится (I3): `opening_balance + Σ transactions` (§9.1).
+@DataClassName('AccountRow')
 class Accounts extends Table with SyncableTable {
   TextColumn get name => text()();
 
@@ -43,6 +44,7 @@ class Accounts extends Table with SyncableTable {
 }
 
 /// Категория. Предустановленная: `key != null`, `name == null` — имя из ARB.
+@DataClassName('CategoryRow')
 class Categories extends Table with SyncableTable {
   TextColumn get key => text().nullable()();
   TextColumn get name => text().nullable()();
@@ -60,6 +62,7 @@ class Categories extends Table with SyncableTable {
 }
 
 /// Транзакция: `amount > 0` всегда, знак задаёт `kind`.
+@DataClassName('TransactionRow')
 class Transactions extends Table with SyncableTable {
   /// 'expense' | 'income' | 'transfer'
   TextColumn get kind => text()();
@@ -84,6 +87,7 @@ class Transactions extends Table with SyncableTable {
 }
 
 /// Правило обязательства (§5).
+@DataClassName('RuleRow')
 class RecurringRules extends Table with SyncableTable {
   TextColumn get name => text()();
 
@@ -120,6 +124,7 @@ class RecurringRules extends Table with SyncableTable {
 }
 
 /// Наступление правила.
+@DataClassName('OccurrenceRow')
 class Occurrences extends Table with SyncableTable {
   TextColumn get ruleId => text().references(RecurringRules, #id)();
   IntColumn get seq => integer()();
@@ -138,6 +143,7 @@ class Occurrences extends Table with SyncableTable {
 }
 
 /// Бюджет месяца по категории (`category_id = null` — общий), §9.4.
+@DataClassName('BudgetRow')
 class Budgets extends Table with SyncableTable {
   TextColumn get categoryId => text().nullable().references(Categories, #id)();
 

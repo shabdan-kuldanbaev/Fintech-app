@@ -1823,7 +1823,7 @@ abstract class AppLocalizations {
   /// No description provided for @phone.
   ///
   /// In en, this message translates to:
-  /// **'Phone & internet'**
+  /// **'Phone'**
   String get phone;
 
   /// No description provided for @subscriptions.

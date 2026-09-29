@@ -392,11 +392,13 @@ class GlassMenuButton<T> extends StatelessWidget {
     required this.actions,
     required this.onSelected,
     required this.tooltip,
+    this.icon = Icons.more_horiz,
   });
 
   final List<MenuAction<T>> actions;
   final ValueChanged<T> onSelected;
   final String tooltip;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -422,7 +424,7 @@ class GlassMenuButton<T> extends StatelessWidget {
         child: SizedBox(
           width: AppSizes.iconButton,
           height: AppSizes.iconButton,
-          child: Icon(Icons.more_horiz, size: 22, color: scheme.onSurface),
+          child: Icon(icon, size: 22, color: scheme.onSurface),
         ),
       ),
     );
